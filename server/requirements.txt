@@ -1,0 +1,4 @@
+Django==5.2.7
+djangorestframework==3.16.1
+django-stubs==5.2.7
+mypy==1.18.2
