@@ -1,5 +1,5 @@
-from .member import Member
 from django.db import models
+from main.models.member import Member
 
 
 class ScheduleType(models.Model):
