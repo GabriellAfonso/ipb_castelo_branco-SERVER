@@ -7,7 +7,7 @@ from datetime import timedelta, date
 from django.utils.timezone import now
 from django.db.models import Count
 from rest_framework.views import APIView
-from rest_framework.response import Response
+
 
 from main.models.songs import Played, Song
 from main.serializers import PlayedSerializer
@@ -16,14 +16,22 @@ from main.models.schedule import MonthlySchedule
 from main.models.hymnal import Hymn
 from django.db.models import IntegerField
 from django.db.models.functions import Cast, Substr
-
 import re
-import random
+from .serializers import RegisterSerializer
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views import View
 from django.db.models import Q
 from datetime import datetime
+from django.http import HttpResponse
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.request import Request
+from rest_framework.permissions import AllowAny
+from django.utils import timezone
 
 
 def _make_etag_from_data(data) -> str:
@@ -147,7 +155,7 @@ class SuggestedSongsAPI(APIView):
         return suggested
 
 
-class GenerateMonthlyScheduleAPIView(APIView):
+class GenerateMonthlyScheduleAPI(APIView):
     def post(self, request):
         generate_monthly_schedule()
 
@@ -270,3 +278,44 @@ class Unauthorized(View):
 
     def get(self, request):
         return render(request, 'main/unauthorized.html')
+
+
+# class RegisterView(APIView):
+#     permission_classes = (AllowAny,)
+
+#     def post(self, request: Request) -> Response:
+#         serializer = RegisterSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({"detail": "User registered successfully"}, status=201)
+
+#         return Response(getattr(serializer, "errors"), status=400)
+
+
+class LoginAPI(APIView):
+    def post(self, request: Request) -> Response:
+        username = request.data.get("username")
+        password = request.data.get("password")
+
+        user = authenticate(username=username, password=password)
+        if user is not None:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "refresh": str(refresh),
+                "token": str(refresh.access_token),
+            })
+        else:
+            return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class RegisterAPI(APIView):
+    authentication_classes = []  # permite acesso sem login
+    permission_classes = []      # público
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({"detail": "User registered successfully"}, status=201)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
