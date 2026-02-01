@@ -1,6 +1,7 @@
 from django.urls import path, include
-from .views import SongsBySundayAPI, TopSongsAPI, TopTonesAPI, SuggestedSongsAPI, GenerateMonthlyScheduleAPIView
+from .views import SongsBySundayAPI, TopSongsAPI, TopTonesAPI, SuggestedSongsAPI, GenerateMonthlyScheduleAPI
 from .views import hymnalAPI, Unauthorized, RegisterSundays
+from .views import RegisterAPI, LoginAPI
 
 
 app_name = 'main'
@@ -13,12 +14,14 @@ urlpatterns = [
     path('ipbcb/suggested-songs/',
          SuggestedSongsAPI.as_view(), name='suggested_songs'),
     path('ipbcb/generate-schedule/',
-         GenerateMonthlyScheduleAPIView.as_view(), name='generate_schedule'),
+         GenerateMonthlyScheduleAPI.as_view(), name='generate_schedule'),
     path('ipbcb/hymnal/',
          hymnalAPI.as_view(), name='hymnal'),
-    # path('registrar-domingo', RegisterSundays.as_view(), name='register_sundays'),
-    # path('encontrar-musicas', FindMusic.as_view(), name='find_music'),
 
     path('unauthorized', Unauthorized.as_view(), name='unauthorized'),
-    path('register', RegisterSundays.as_view(), name='register_sundays'),
+    path('register-sundays', RegisterSundays.as_view(), name='register_sundays'),
+
+    path('ipbcb/auth/register/', RegisterAPI.as_view(), name='register'),
+    path('ipbcb/auth/login/', LoginAPI.as_view(), name='login'),
+
 ]
