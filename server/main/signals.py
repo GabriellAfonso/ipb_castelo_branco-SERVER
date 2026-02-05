@@ -5,6 +5,15 @@ from main.models.profile import Profile
 
 
 @receiver(post_save, sender=User)
-def ensure_user_profile(sender, instance, created, **kwargs):
+def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        Profile.objects.create(user=instance)
+        Profile.objects.create(
+            user=instance,
+            name=f"{instance.first_name} {instance.last_name}".strip().lower()
+        )
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
