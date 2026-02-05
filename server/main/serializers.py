@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from main.models.songs import Song, Played
 from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
 
 
 class SongSerializer(serializers.ModelSerializer):
@@ -19,19 +20,70 @@ class PlayedSerializer(serializers.ModelSerializer):
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
-    password_confirm = serializers.CharField(write_only=True, min_length=6)
+    password = serializers.CharField(
+        write_only=True,
+        min_length=6,
+        error_messages={
+            "min_length": _("A senha precisa ter ao menos 6 caracteres."),
+            "blank": _("Este campo não pode ficar em branco."),
+            "required": _("Este campo é obrigatório."),
+        },
+    )
+
+    # Mantém o nome que você quer retornar no erro (password_confirm)
+    password_confirm = serializers.CharField(
+        write_only=True,
+        required=True,
+        allow_blank=True,
+        min_length=6,
+        error_messages={
+            "min_length": _("A senha precisa ter ao menos 6 caracteres."),
+            "blank": _("Este campo não pode ficar em branco."),
+            "required": _("Este campo é obrigatório."),
+        },
+    )
+
+    first_name = serializers.CharField(
+        max_length=30,
+        error_messages={"blank": _("Este campo não pode ficar em branco."), "required": _(
+            "Este campo é obrigatório.")},
+    )
+    last_name = serializers.CharField(
+        max_length=150,
+        error_messages={"blank": _("Este campo não pode ficar em branco."), "required": _(
+            "Este campo é obrigatório.")},
+    )
 
     class Meta:
         model = User
-        fields = ["username", "password", "password_confirm"]
+        fields = ["username", "first_name",
+                  "last_name", "password", "password_confirm"]
+        extra_kwargs = {
+            "username": {
+                "error_messages": {
+                    "blank": _("Este campo não pode ficar em branco."),
+                    "required": _("Este campo é obrigatório."),
+                }
+            }
+        }
 
     def validate(self, data):
-        if data["password"] != data["password_confirm"]:
+        password = data.get("password")
+
+        password_confirm = data.get("password_confirm")
+
+        if password != password_confirm:
             raise serializers.ValidationError(
-                {"password_confirm": "Passwords do not match."})
+                {"password_confirm": [_("As senhas não coincidem.")]})
+
+        # garante que o fluxo abaixo use o campo correto
+        data["password_confirm"] = password_confirm
         return data
 
     def create(self, validated_data):
-        validated_data.pop("password_confirm")
-        return User.objects.create_user(**validated_data)
+        validated_data.pop("password_confirm", None)
+        password = validated_data.pop("password")
+        user = User.objects.create_user(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
