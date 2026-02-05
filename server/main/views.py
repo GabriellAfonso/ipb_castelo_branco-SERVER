@@ -19,19 +19,20 @@ from django.db.models.functions import Cast, Substr
 import re
 from .serializers import RegisterSerializer
 from django.shortcuts import render, redirect
-from django.http import JsonResponse
 from django.views import View
-from django.db.models import Q
 from datetime import datetime
-from django.http import HttpResponse
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.request import Request
-from rest_framework.permissions import AllowAny
-from django.utils import timezone
+from django.contrib.auth.models import User
+from django.utils.translation import gettext_lazy as _
+
+from main.auth.jwt import get_tokens_for_user
+from main.auth.jwt import add_custom_claims
+
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.settings import api_settings
 
 
 def _make_etag_from_data(data) -> str:
@@ -292,6 +293,28 @@ class Unauthorized(View):
 #         return Response(getattr(serializer, "errors"), status=400)
 
 
+class RegisterAPI(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user: User = serializer.save()
+
+        tokens = get_tokens_for_user(user)
+        return Response(
+            {
+                "refresh": tokens["refresh"],
+                # keep compatibility with existing clients
+                "token": tokens["access"],
+                "access": tokens["access"],
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
 class LoginAPI(APIView):
     def post(self, request: Request) -> Response:
         username = request.data.get("username")
@@ -299,23 +322,59 @@ class LoginAPI(APIView):
 
         user = authenticate(username=username, password=password)
         if user is not None:
-            refresh = RefreshToken.for_user(user)
+            tokens = get_tokens_for_user(user)
             return Response({
-                "refresh": str(refresh),
-                "token": str(refresh.access_token),
+                "refresh": tokens["refresh"],
+                # keep compatibility with existing clients
+                "token": tokens["access"],
+                "access": tokens["access"],
             })
-        else:
-            return Response({"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"detail": [_("Credenciais inválidas")]}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class RegisterAPI(APIView):
-    authentication_classes = []  # permite acesso sem login
-    permission_classes = []      # público
+class RefreshTokenAPI(APIView):
+    authentication_classes = []
+    permission_classes = []
 
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response({"detail": "User registered successfully"}, status=201)
+    def post(self, request: Request) -> Response:
+        refresh_str = request.data.get("refresh")
+        if not refresh_str:
+            return Response({"refresh": [_("Este campo é obrigatório.")]}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            refresh = RefreshToken(refresh_str)
+
+            user_id = refresh.get("user_id")
+            user = User.objects.filter(id=user_id).first() if user_id else None
+
+            access = refresh.access_token
+            if user is not None:
+                add_custom_claims(access, user)  # type: ignore[arg-type]
+
+            data: dict[str, str] = {
+                "access": str(access),
+                # keep compatibility with existing clients
+                "token": str(access),
+            }
+
+            if api_settings.ROTATE_REFRESH_TOKENS:
+                refresh.set_jti()
+                refresh.set_exp()
+                refresh.set_iat()
+
+                if api_settings.BLACKLIST_AFTER_ROTATION:
+                    try:
+                        refresh.blacklist()
+                    except AttributeError:
+                        # blacklist app not installed
+                        pass
+
+                if user is not None:
+                    add_custom_claims(refresh, user)
+
+                data["refresh"] = str(refresh)
+
+            return Response(data, status=status.HTTP_200_OK)
+
+        except Exception:
+            return Response({"detail": [_("Token inválido ou expirado")]}, status=status.HTTP_401_UNAUTHORIZED)
