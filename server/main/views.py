@@ -25,12 +25,15 @@ from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.request import Request
-from django.contrib.auth.models import User
+from main.models.profile import User
 from django.utils.translation import gettext_lazy as _
 
 from main.auth.jwt import get_tokens_for_user
 from main.auth.jwt import add_custom_claims
-
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
+from main.models.profile import Profile
+from .serializers import ProfilePhotoSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.settings import api_settings
 
@@ -373,8 +376,50 @@ class RefreshTokenAPI(APIView):
                     add_custom_claims(refresh, user)
 
                 data["refresh"] = str(refresh)
-
+            print('chamou refresh')
             return Response(data, status=status.HTTP_200_OK)
 
         except Exception:
             return Response({"detail": [_("Token inválido ou expirado")]}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class ProfilePhotoAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        """
+        Cria ou substitui a foto de perfil do usuário autenticado
+        """
+        user = request.user
+
+        profile, _ = Profile.objects.get_or_create(user=user)
+
+        serializer = ProfilePhotoSerializer(
+            profile,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response({
+            "detail": "Foto de perfil atualizada com sucesso.",
+            "photo_url": request.build_absolute_uri(profile.photo.url) if profile.photo else None
+        }, status=status.HTTP_200_OK)
+
+    def delete(self, request):
+        """
+        Remove a foto de perfil
+        """
+        try:
+            profile = request.user.profile
+        except Profile.DoesNotExist:
+            return Response({"detail": "Perfil não encontrado."}, status=404)
+
+        if profile.photo:
+            profile.photo.delete(save=False)
+            profile.photo = None
+            profile.save()
+
+        return Response({"detail": "Foto de perfil removida."}, status=204)
