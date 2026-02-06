@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from django.contrib.auth.models import User
+from main.models.profile import User
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
