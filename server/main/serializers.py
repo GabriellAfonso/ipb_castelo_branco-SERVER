@@ -99,3 +99,18 @@ class ProfilePhotoSerializer(serializers.ModelSerializer):
         if instance.photo and "photo" in validated_data:
             instance.photo.delete(save=False)
         return super().update(instance, validated_data)
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    photo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = ["name", "active", "is_member", "photo_url"]
+        read_only_fields = ["active", "is_member", "photo_url"]
+
+    def get_photo_url(self, obj):
+        request = self.context.get("request")
+        if obj.photo and request:
+            return request.build_absolute_uri(obj.photo.url)
+        return None
