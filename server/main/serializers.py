@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from main.models.songs import Song, Played
-from django.contrib.auth.models import User
+from main.models.profile import User
 from django.utils.translation import gettext_lazy as _
+from main.models.profile import Profile
 
 
 class SongSerializer(serializers.ModelSerializer):
@@ -87,3 +88,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class ProfilePhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ["photo"]
+
+    def update(self, instance, validated_data):
+        if instance.photo and "photo" in validated_data:
+            instance.photo.delete(save=False)
+        return super().update(instance, validated_data)
