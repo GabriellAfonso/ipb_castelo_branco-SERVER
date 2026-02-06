@@ -13,6 +13,34 @@ from main.serializers import PlayedSerializer
 from .utils import _not_modified_or_response
 
 
+def _parse_fixed_param(value: str) -> dict[int, int]:
+    """
+    Parses query param like: "1:12,3:45" -> {1: 12, 3: 45}
+    Invalid entries are ignored.
+    """
+    fixed: dict[int, int] = {}
+    if not value:
+        return fixed
+
+    parts = [p.strip() for p in value.split(",") if p.strip()]
+    for part in parts:
+        if ":" not in part:
+            continue
+        pos_str, played_id_str = [x.strip() for x in part.split(":", 1)]
+        try:
+            pos = int(pos_str)
+            played_id = int(played_id_str)
+        except ValueError:
+            continue
+
+        if pos < 1 or pos > 4:
+            continue
+
+        fixed[pos] = played_id
+
+    return fixed
+
+
 class SongsBySundayAPI(APIView):
     def get(self, request):
         qs = (
@@ -61,18 +89,50 @@ class TopTonesAPI(APIView):
 
 class SuggestedSongsAPI(APIView):
     def get(self, request):
-        return Response(self.get_suggested_songs())
+        fixed_param = request.query_params.get("fixed", "")
+        print(fixed_param)
+        fixed_by_position = _parse_fixed_param(fixed_param)
+        suggested = self.get_suggested_songs(fixed_by_position)
+        print(suggested)
+        return Response(suggested)
 
-    def get_suggested_songs(self):
+    def get_suggested_songs(self, fixed_by_position: dict[int, int] | None = None):
         three_months_ago = now() - timedelta(days=90)
         suggested = []
-        used_song_ids = set()
+        used_song_ids: set[int] = set()
 
+        fixed_by_position = fixed_by_position or {}
+
+        # Songs played in the last 3 months can't be suggested (same rule as before)
         recent_songs = Played.objects.filter(date__gte=three_months_ago).values_list(
             "song_id", flat=True
         )
 
+        # 1) Apply fixed/pinned suggestions first
+        if fixed_by_position:
+            fixed_ids = list(set(fixed_by_position.values()))
+            fixed_playeds = (
+                Played.objects.select_related("song")
+                .filter(id__in=fixed_ids)
+            )
+            fixed_by_id = {p.id: p for p in fixed_playeds}
+
+            for position, played_id in fixed_by_position.items():
+                played_obj = fixed_by_id.get(played_id)
+                if not played_obj:
+                    continue
+
+                used_song_ids.add(played_obj.song_id)
+
+                data = PlayedSerializer(played_obj).data
+                data["position"] = position  # force the pinned position
+                suggested.append(data)
+
+        # 2) Fill remaining positions with random picks (same rules as before)
         for position in range(1, 5):
+            if position in fixed_by_position:
+                continue
+
             qs = (
                 Played.objects.select_related("song")
                 .filter(position=position, date__lt=three_months_ago)
@@ -85,7 +145,7 @@ class SuggestedSongsAPI(APIView):
                 used_song_ids.add(chosen.song_id)
 
                 data = PlayedSerializer(chosen).data
-                data["position"] = position  # garante o campo
+                data["position"] = position
                 suggested.append(data)
 
         suggested.sort(key=lambda x: x.get("position", 0))
