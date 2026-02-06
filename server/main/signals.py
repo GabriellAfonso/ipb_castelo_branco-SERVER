@@ -1,7 +1,8 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
-from django.contrib.auth.models import User
+from main.models.profile import User
 from main.models.profile import Profile
+import os
 
 
 @receiver(post_save, sender=User)
@@ -17,3 +18,25 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, 'profile'):
         instance.profile.save()
+
+
+@receiver(pre_save, sender=Profile)
+def delete_old_photo_on_change(sender, instance, **kwargs):
+    if not instance.pk:
+        return
+
+    try:
+        old_photo = Profile.objects.get(pk=instance.pk).photo
+    except Profile.DoesNotExist:
+        return
+
+    new_photo = instance.photo
+    if old_photo and old_photo != new_photo:
+        if os.path.isfile(old_photo.path):
+            os.remove(old_photo.path)
+
+
+@receiver(post_delete, sender=Profile)
+def delete_photo_on_profile_delete(sender, instance, **kwargs):
+    if instance.photo and os.path.isfile(instance.photo.path):
+        os.remove(instance.photo.path)
