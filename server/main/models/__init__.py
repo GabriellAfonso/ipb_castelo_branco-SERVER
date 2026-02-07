@@ -1,1 +1,1 @@
-from .profile import User
+from main.models.profile import User
