@@ -1,6 +1,6 @@
 from django.urls import path
 
-from main.views.admin_pages import RegisterSundays, Unauthorized
+from main.views.admin_pages import RegisterSundays, Unauthorized, RegisterSundayPlaysAPI
 from main.views.auth import LoginAPI, RefreshTokenAPI, RegisterAPI
 from main.views.hymnal import hymnalAPI
 from main.views.profile import MeProfileAPIView, ProfilePhotoAPIView
@@ -9,19 +9,33 @@ from main.views.schedule import (
     MonthlySchedulePreviewAPI,
     MonthlyScheduleSaveAPI,
 )
-from main.views.songs import SongsBySundayAPI, SuggestedSongsAPI, TopSongsAPI, TopTonesAPI
+from main.views.songs import (
+    AllSongsAPI,
+    SongsBySundayAPI,
+    SuggestedSongsAPI,
+    TopSongsAPI,
+    TopTonesAPI,
+)
 
 app_name = "main"
 
 urlpatterns = [
     path("unauthorized", Unauthorized.as_view(), name="unauthorized"),
     path("register-sundays", RegisterSundays.as_view(), name="register_sundays"),
+
+    # 🎵 MÚSICAS
+    path("ipbcb/songs/", AllSongsAPI.as_view(), name="all_songs"),
+
     path("ipbcb/songs-by-sunday/",
          SongsBySundayAPI.as_view(), name="songs_by_sunday"),
     path("ipbcb/top-songs/", TopSongsAPI.as_view(), name="top_songs"),
     path("ipbcb/top-tones/", TopTonesAPI.as_view(), name="top_tones"),
     path("ipbcb/suggested-songs/",
          SuggestedSongsAPI.as_view(), name="suggested_songs"),
+
+    # ✅ ADMIN: registrar Played via POST (precisa profile.is_admin == True)
+    path("ipbcb/played/register/", RegisterSundayPlaysAPI.as_view(),
+         name="register_sunday_plays"),
 
     # 🗓️ ESCALA (novo fluxo)
     path("ipbcb/schedule/current/",
