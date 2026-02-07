@@ -90,10 +90,8 @@ class TopTonesAPI(APIView):
 class SuggestedSongsAPI(APIView):
     def get(self, request):
         fixed_param = request.query_params.get("fixed", "")
-        print(fixed_param)
         fixed_by_position = _parse_fixed_param(fixed_param)
         suggested = self.get_suggested_songs(fixed_by_position)
-        print(suggested)
         return Response(suggested)
 
     def get_suggested_songs(self, fixed_by_position: dict[int, int] | None = None):
@@ -150,3 +148,33 @@ class SuggestedSongsAPI(APIView):
 
         suggested.sort(key=lambda x: x.get("position", 0))
         return suggested
+
+
+class AllSongsAPI(APIView):
+    """
+    GET: retorna todas as músicas cadastradas.
+
+    Response example:
+    [
+      {"id": 1, "title": "...", "artist": "...", "category": "Louvor"},
+      ...
+    ]
+    """
+
+    def get(self, request):
+        qs = (
+            Song.objects.select_related("category")
+            .order_by("title", "artist")
+            .values("id", "title", "artist", "category__name")
+        )
+
+        data = [
+            {
+                "id": row["id"],
+                "title": row["title"],
+                "artist": row["artist"],
+                "category": row["category__name"] or "",
+            }
+            for row in qs
+        ]
+        return _not_modified_or_response(request, data, tag="all-songs")
