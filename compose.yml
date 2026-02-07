@@ -4,6 +4,8 @@ services:
     build:
       context: .
     image: ipbcb-server:dev
+    env_file:
+      - ./.env
     ports:
       - 8002:8000
     volumes:
