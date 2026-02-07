@@ -24,6 +24,7 @@ class Profile(models.Model):
         upload_to=profile_photo_path, null=True, blank=True)
     active = models.BooleanField(default=True)
     is_member = models.BooleanField(default=False)
+    is_admin = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
