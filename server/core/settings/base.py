@@ -120,17 +120,14 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-
+FORCE_SCRIPT_NAME = "/api"
 # Static/media
-STATIC_URL = "/static/"
+STATIC_URL = "/ipbcb/static/"
 STATIC_ROOT = BASE_DIR / "static"
 
-MEDIA_URL = "/media/"
+MEDIA_URL = "/ipbcb/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 
-# Reverse proxy / script name
-# TODO: separar o settings pra ter isso só em produçao
-FORCE_SCRIPT_NAME = "/api"
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
