@@ -4,8 +4,8 @@ from datetime import date
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from main.models.schedule import MonthlySchedule
-from main.services.monthly_scheduler import (
+from apps.persistence.models.schedule import MonthlySchedule
+from core.application.services.monthly_scheduler import (
     generate_monthly_schedule_preview,
     save_monthly_schedule,
 )

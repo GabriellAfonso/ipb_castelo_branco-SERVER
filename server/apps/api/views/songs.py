@@ -7,8 +7,8 @@ from django.utils.timezone import now
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from main.models.songs import Played, Song
-from main.serializers import PlayedSerializer
+from apps.persistence.models.songs import Played, Song
+from apps.api.serializers import PlayedSerializer
 
 from .utils import _not_modified_or_response
 

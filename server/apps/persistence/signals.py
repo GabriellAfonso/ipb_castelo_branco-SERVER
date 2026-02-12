@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
-from main.models.profile import User
-from main.models.profile import Profile
+from apps.persistence.models.profile import User
+from apps.persistence.models.profile import Profile
 import os
 
 

@@ -2,7 +2,7 @@ from django.db.models import IntegerField
 from django.db.models.functions import Cast, Substr
 from rest_framework.views import APIView
 
-from main.models.hymnal import Hymn
+from apps.persistence.models.hymnal import Hymn
 
 from .utils import _not_modified_or_response
 

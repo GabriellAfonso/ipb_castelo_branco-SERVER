@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
 
-AUTH_USER_MODEL = "main.User"
+AUTH_USER_MODEL = "persistence.User"
 
 ALLOWED_HOSTS: list[str] = []
 
@@ -43,7 +43,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "main",
+    "apps.persistence",
+    "apps.api",
+    # "main",
+
 ]
 
 MIDDLEWARE = [

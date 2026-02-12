@@ -1,5 +1,5 @@
 from django.db import models
-from main.models.member import Member
+from apps.persistence.models.member import Member
 
 
 class ScheduleType(models.Model):

@@ -1,15 +1,15 @@
 from django.urls import path
 
-from main.views.admin_pages import RegisterSundays, Unauthorized, RegisterSundayPlaysAPI
-from main.views.auth import LoginAPI, RefreshTokenAPI, RegisterAPI
-from main.views.hymnal import hymnalAPI
-from main.views.profile import MeProfileAPIView, ProfilePhotoAPIView
-from main.views.schedule import (
+from apps.api.views.admin_pages import RegisterSundays, Unauthorized, RegisterSundayPlaysAPI
+from apps.api.views.auth import LoginAPI, RefreshTokenAPI, RegisterAPI
+from apps.api.views.hymnal import hymnalAPI
+from apps.api.views.profile import MeProfileAPIView, ProfilePhotoAPIView
+from apps.api.views.schedule import (
     CurrentMonthlyScheduleAPI,
     MonthlySchedulePreviewAPI,
     MonthlyScheduleSaveAPI,
 )
-from main.views.songs import (
+from apps.api.views.songs import (
     AllSongsAPI,
     SongsBySundayAPI,
     SuggestedSongsAPI,
@@ -17,7 +17,7 @@ from main.views.songs import (
     TopTonesAPI,
 )
 
-app_name = "main"
+app_name = "apps.api"
 
 urlpatterns = [
     path("unauthorized", Unauthorized.as_view(), name="unauthorized"),

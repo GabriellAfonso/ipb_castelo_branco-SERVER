@@ -7,10 +7,10 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from main.auth.jwt import add_custom_claims, get_tokens_for_user
-from main.models.profile import User
+from apps.api.auth.jwt import add_custom_claims, get_tokens_for_user
+from apps.persistence.models.profile import User
 
-from main.serializers import RegisterSerializer
+from apps.api.serializers import RegisterSerializer
 
 
 class RegisterAPI(APIView):

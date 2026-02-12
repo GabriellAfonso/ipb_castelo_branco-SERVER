@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from main.models.songs import Song, Played
-from main.models.profile import User
+from apps.persistence.models.songs import Song, Played
+from apps.persistence.models.profile import User
 from django.utils.translation import gettext_lazy as _
-from main.models.profile import Profile
+from apps.persistence.models.profile import Profile
 
 
 class SongSerializer(serializers.ModelSerializer):

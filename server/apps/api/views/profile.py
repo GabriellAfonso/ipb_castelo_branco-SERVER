@@ -4,9 +4,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from main.models.profile import Profile
+from apps.persistence.models.profile import Profile
 
-from main.serializers import ProfilePhotoSerializer, ProfileSerializer
+from apps.api.serializers import ProfilePhotoSerializer, ProfileSerializer
 from .utils import _not_modified_or_response
 
 
