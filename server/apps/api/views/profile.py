@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 
 from apps.persistence.models.profile import Profile
 
-from apps.api.serializers import ProfilePhotoSerializer, ProfileSerializer
+from apps.api.serializers.serializers import ProfilePhotoSerializer, ProfileSerializer
 from .utils import _not_modified_or_response
 
 
