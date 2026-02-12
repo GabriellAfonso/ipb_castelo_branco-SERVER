@@ -6,54 +6,66 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.tokens import RefreshToken
+from pydantic import ValidationError
 
 from apps.api.auth.jwt import add_custom_claims, get_tokens_for_user
 from apps.persistence.models.profile import User
+from core.application.dtos.auth_dtos import LoginDTO, TokenDTO
 
-from apps.api.serializers import RegisterSerializer
+from apps.api.serializers.register_serializer import RegisterSerializer
+
+# injeção
+from dependency_injector.wiring import inject, Provide
+from config.dependencies import Container
+from core.domain.interfaces.repositories.user_repository import UserRepository
 
 
 class RegisterAPI(APIView):
     authentication_classes = []
     permission_classes = []
 
-    def post(self, request):
+    @inject
+    def post(self, request: Request,
+             user_repo: UserRepository = Provide[Container.user_repository]) -> Response:
+
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user: User = serializer.save()
+        dto = serializer.create_dto()
+        user: User = user_repo.create(dto)
 
         tokens = get_tokens_for_user(user)
-        return Response(
-            {
-                "refresh": tokens["refresh"],
-                "token": tokens["access"],  # compat
-                "access": tokens["access"],
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        return Response({
+            "refresh": tokens["refresh"],
+            "token": tokens["access"],
+            "access": tokens["access"],
+        }, status=status.HTTP_201_CREATED)
 
 
 class LoginAPI(APIView):
-    def post(self, request: Request) -> Response:
-        username = request.data.get("username")
-        password = request.data.get("password")
-
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            tokens = get_tokens_for_user(user)
+    def post(self, request):
+        try:
+            login_dto = LoginDTO(**request.data)
+        except ValidationError as e:
             return Response(
-                {
-                    "refresh": tokens["refresh"],
-                    "token": tokens["access"],  # compat
-                    "access": tokens["access"],
-                }
+                {"detail": e.errors()},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return Response(
-            {"detail": [_("Credenciais inválidas")]},
-            status=status.HTTP_401_UNAUTHORIZED,
-        )
+        user = authenticate(username=login_dto.username,
+                            password=login_dto.password)
+
+        if user is None:
+            return Response(
+                {"detail": _("Nome de usuário ou senha inválidos.")},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        tokens = get_tokens_for_user(user)
+        token_dto = TokenDTO(
+            access=tokens["access"], refresh=tokens.get("refresh"))
+
+        return Response(token_dto.model_dump(), status=status.HTTP_200_OK)
 
 
 class RefreshTokenAPI(APIView):
