@@ -23,7 +23,7 @@ def env_bool(name: str, default: bool = False) -> bool:
 # Core
 SECRET_KEY = os.environ.get(
     "DJANGO_SECRET_KEY",
-    "Key",
+    "django-insecure-ufeshinhw3=4&-^bh08^e(sn&4t=vy6=7d8b-d%o+3)#7a@jpc",
 )
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
