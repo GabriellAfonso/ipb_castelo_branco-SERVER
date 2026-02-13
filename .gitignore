@@ -1,6 +1,7 @@
+.idea
 venv/
 server/static/
-test.rest
+test.http
 igreja.json
 hinos_completos.json
 
