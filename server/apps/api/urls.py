@@ -1,5 +1,6 @@
 from django.urls import path
 
+from rest_framework_simplejwt.views import TokenRefreshView
 from apps.api.views.admin_pages import RegisterSundays, Unauthorized, RegisterSundayPlaysAPI
 from apps.api.views.auth import LoginAPI, RefreshTokenAPI, RegisterAPI
 from apps.api.views.hymnal import hymnalAPI
@@ -16,6 +17,7 @@ from apps.api.views.songs import (
     TopSongsAPI,
     TopTonesAPI,
 )
+
 
 app_name = "apps.api"
 
@@ -52,7 +54,8 @@ urlpatterns = [
     path("ipbcb/hymnal/", hymnalAPI.as_view(), name="hymnal"),
     path("ipbcb/auth/register/", RegisterAPI.as_view(), name="register"),
     path("ipbcb/auth/login/", LoginAPI.as_view(), name="login"),
-    path("ipbcb/auth/refresh/", RefreshTokenAPI.as_view(), name="token_refresh"),
+    path("ipbcb/auth/refresh/",
+         TokenRefreshView.as_view(), name="token_refresh"),
     path("ipbcb/me/profile/photo/",
          ProfilePhotoAPIView.as_view(), name="profile_photo"),
     path("ipbcb/me/profile/", MeProfileAPIView.as_view()),
