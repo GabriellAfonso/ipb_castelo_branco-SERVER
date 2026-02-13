@@ -3,6 +3,7 @@ from typing import Optional
 from apps.persistence.models.profile import User
 from core.application.dtos.auth_dtos import RegisterDTO
 from core.domain.interfaces.repositories.user_repository import UserRepository
+from uuid import UUID
 
 
 class DjangoUserRepository(UserRepository):
@@ -23,7 +24,7 @@ class DjangoUserRepository(UserRepository):
                 username=data.username, password=data.password)
         return user
 
-    def get_by_id(self, user_id: int) -> Optional[User]:
+    def get_by_id(self, user_id: UUID | str) -> Optional[User]:
         return User.objects.filter(id=user_id).first()
 
     def get_by_username(self, username: str) -> Optional[User]:
