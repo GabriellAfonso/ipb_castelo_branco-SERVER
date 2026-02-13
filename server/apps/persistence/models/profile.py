@@ -8,7 +8,7 @@ class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
 
-def profile_photo_path(instance, filename):
+def profile_photo_path(instance: "Profile", filename: str) -> str:
     ext = filename.split('.')[-1]
     return f"profiles/{instance.user.username}/profile_picture.{ext}"
 
@@ -26,5 +26,5 @@ class Profile(models.Model):
     is_member = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.user.username
