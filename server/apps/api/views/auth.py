@@ -32,7 +32,9 @@ class RegisterAPI(APIView):
 
 
 class LoginAPI(APIView):
-    def post(self, request: Request) -> Response:
+
+    @staticmethod
+    def post(request: Request) -> Response:
         try:
             login_dto = LoginDTO(**request.data)
         except ValidationError as e:
