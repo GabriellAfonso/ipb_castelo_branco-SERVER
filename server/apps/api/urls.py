@@ -2,7 +2,7 @@ from django.urls import path
 
 from rest_framework_simplejwt.views import TokenRefreshView
 from apps.api.views.admin_pages import RegisterSundays, Unauthorized, RegisterSundayPlaysAPI
-from apps.api.views.auth import LoginAPI, RefreshTokenAPI, RegisterAPI
+from apps.api.views.auth import LoginAPI, RegisterAPI
 from apps.api.views.hymnal import hymnalAPI
 from apps.api.views.profile import MeProfileAPIView, ProfilePhotoAPIView
 from apps.api.views.schedule import (
