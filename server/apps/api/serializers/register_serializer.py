@@ -3,9 +3,18 @@ from rest_framework import serializers
 from core.application.dtos.auth_dtos import RegisterDTO
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
+from typing import TypedDict
 
 
-class RegisterSerializer(serializers.Serializer):
+class RegisterData(TypedDict):
+    username: str
+    first_name: str
+    last_name: str
+    password: str
+    password_confirm: str
+
+
+class RegisterSerializer(serializers.Serializer[RegisterData]):
     username = serializers.CharField(
         max_length=150,
         error_messages={
@@ -48,14 +57,14 @@ class RegisterSerializer(serializers.Serializer):
         },
     )
 
-    def validate(self, data: dict[str, Any]):
+    def validate(self, data: dict[str, Any]) -> dict[str, Any]:
         if data.get("password") != data.get("password_confirm"):
             raise serializers.ValidationError({
                 "password_confirm": [_("As senhas não coincidem.")]
             })
         return data
 
-    def create_dto(self):
+    def create_dto(self) -> RegisterDTO:
         return RegisterDTO(
             username=self.validated_data.get("username"),
             password=self.validated_data.get("password"),
