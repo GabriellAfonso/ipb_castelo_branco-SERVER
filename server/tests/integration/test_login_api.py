@@ -24,7 +24,7 @@ class LoginAPIIntegrationTest(TestCase):
             "password": self.password,
         }
 
-        resp = self.client.post("/ipbcb/auth/login/",
+        resp = self.client.post("/api/auth/login/",
                                 payload, format="json")
 
         self.assertEqual(resp.status_code, 200, resp.content)
@@ -37,7 +37,7 @@ class LoginAPIIntegrationTest(TestCase):
             "password": "wrongpassword",
         }
 
-        resp = self.client.post("/ipbcb/auth/login/",
+        resp = self.client.post("/api/auth/login/",
                                 payload, format="json")
 
         self.assertEqual(resp.status_code, 401)

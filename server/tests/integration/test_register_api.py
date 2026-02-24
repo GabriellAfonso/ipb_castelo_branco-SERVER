@@ -17,7 +17,7 @@ class RegisterAPIIntegrationTest(TestCase):
             "password_confirm": "verysecure123",
         }
 
-        resp = self.client.post("/ipbcb/auth/register/",
+        resp = self.client.post("/api/auth/register/",
                                 payload, format="json")
 
         # status + tokens

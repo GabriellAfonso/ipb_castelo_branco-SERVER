@@ -18,7 +18,7 @@ class TokenRefreshIntegrationTest(TestCase):
 
         # faz login para obter refresh
         login_resp = self.client.post(
-            "/ipbcb/auth/login/",
+            "/api/auth/login/",
             {
                 "username": "charlie",
                 "password": self.password,
@@ -30,7 +30,7 @@ class TokenRefreshIntegrationTest(TestCase):
 
     def test_refresh_returns_new_access_token(self):
         resp = self.client.post(
-            "/ipbcb/auth/refresh/",
+            "/api/auth/refresh/",
             {"refresh": self.refresh_token},
             format="json",
         )
@@ -40,7 +40,7 @@ class TokenRefreshIntegrationTest(TestCase):
 
     def test_refresh_fails_with_invalid_token(self):
         resp = self.client.post(
-            "/ipbcb/auth/refresh/",
+            "/api/auth/refresh/",
             {"refresh": "invalidtoken"},
             format="json",
         )

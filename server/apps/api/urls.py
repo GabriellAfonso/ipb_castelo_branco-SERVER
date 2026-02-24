@@ -30,37 +30,37 @@ urlpatterns = [
     path("register-sundays", RegisterSundays.as_view(), name="register_sundays"),
 
     # 🎵 MÚSICAS
-    path("ipbcb/songs/", AllSongsAPI.as_view(), name="all_songs"),
+    path("api/songs/", AllSongsAPI.as_view(), name="all_songs"),
 
-    path("ipbcb/songs-by-sunday/",
+    path("api/songs-by-sunday/",
          SongsBySundayAPI.as_view(), name="songs_by_sunday"),
-    path("ipbcb/top-songs/", TopSongsAPI.as_view(), name="top_songs"),
-    path("ipbcb/top-tones/", TopTonesAPI.as_view(), name="top_tones"),
-    path("ipbcb/suggested-songs/",
+    path("api/top-songs/", TopSongsAPI.as_view(), name="top_songs"),
+    path("api/top-tones/", TopTonesAPI.as_view(), name="top_tones"),
+    path("api/suggested-songs/",
          SuggestedSongsAPI.as_view(), name="suggested_songs"),
 
     # ✅ ADMIN: registrar Played via POST (precisa profile.is_admin == True)
-    path("ipbcb/played/register/", RegisterSundayPlaysAPI.as_view(),
+    path("api/played/register/", RegisterSundayPlaysAPI.as_view(),
          name="register_sunday_plays"),
 
     # 🗓️ ESCALA (novo fluxo)
-    path("ipbcb/schedule/current/",
+    path("api/schedule/current/",
          CurrentMonthlyScheduleAPI.as_view(), name="schedule_current"),
-    path("ipbcb/schedule/preview/",
+    path("api/schedule/preview/",
          MonthlySchedulePreviewAPI.as_view(), name="schedule_preview"),
-    path("ipbcb/schedule/save/",
+    path("api/schedule/save/",
          MonthlyScheduleSaveAPI.as_view(), name="schedule_save"),
 
     # compat: endpoint antigo agora gera preview (não salva)
-    path("ipbcb/generate-schedule/",
+    path("api/generate-schedule/",
          MonthlySchedulePreviewAPI.as_view(), name="generate_schedule"),
 
-    path("ipbcb/hymnal/", hymnalAPI.as_view(), name="hymnal"),
-    path("ipbcb/auth/register/", RegisterAPI.as_view(), name="register"),
-    path("ipbcb/auth/login/", LoginAPI.as_view(), name="login"),
-    path("ipbcb/auth/refresh/",
+    path("api/hymnal/", hymnalAPI.as_view(), name="hymnal"),
+    path("api/auth/register/", RegisterAPI.as_view(), name="register"),
+    path("api/auth/login/", LoginAPI.as_view(), name="login"),
+    path("api/auth/refresh/",
          TokenRefreshView.as_view(), name="token_refresh"),
-    path("ipbcb/me/profile/photo/",
+    path("api/me/profile/photo/",
          ProfilePhotoAPIView.as_view(), name="profile_photo"),
-    path("ipbcb/me/profile/", MeProfileAPIView.as_view()),
+    path("api/me/profile/", MeProfileAPIView.as_view()),
 ]
