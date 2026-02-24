@@ -9,6 +9,10 @@ from .base import *  # noqa: F403
 
 DEBUG = False
 
+FORCE_SCRIPT_NAME = "/ipbcb/"
+USE_X_FORWARDED_HOST = True
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 def _require_csv_env(name: str) -> list[str]:
     value = (os.environ.get(name) or "").strip()
