@@ -7,6 +7,12 @@ from django.db import models
 class User(AbstractUser):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
+    class Meta:
+        # TODO colocar esse user num app diferente só relacionado a autenticaçao
+        # app_label = 'auth'
+        verbose_name = 'User'
+        verbose_name_plural = 'Users'
+
 
 def profile_photo_path(instance: "Profile", filename: str) -> str:
     ext = filename.split('.')[-1]

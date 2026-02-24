@@ -1,11 +1,12 @@
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from apps.persistence.models.songs import Category, Song, Played
 from apps.persistence.models.profile import Profile
 from apps.persistence.models.schedule import ScheduleType, MemberScheduleConfig, MonthlySchedule
 from apps.persistence.models.hymnal import Hymn
 from apps.persistence.models.member import Member,MemberStatus,Role,Ministry
 from apps.persistence.models.gallery import Album, Photo
+from apps.persistence.models.profile import User
 
 
 models = [
@@ -16,3 +17,9 @@ models = [
 
 for model in models:
     admin.site.register(model)
+
+@admin.register(User)
+class MyUserAdmin(BaseUserAdmin):
+
+    list_display = ('username', 'is_staff')
+    fieldsets = BaseUserAdmin.fieldsets
