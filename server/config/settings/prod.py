@@ -21,7 +21,6 @@ def _require_csv_env(name: str) -> list[str]:
 ALLOWED_HOSTS = _require_csv_env("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = _require_csv_env("DJANGO_CSRF_TRUSTED_ORIGINS")
 
-# When served under /api
 CSRF_COOKIE_PATH = "/ipbcb/"
 SESSION_COOKIE_PATH = "/ipbcb/"
 
