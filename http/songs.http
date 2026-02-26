@@ -1,0 +1,21 @@
+
+### Listar todas as músicas
+# @name all_songs
+GET {{baseUrl}}/api/songs/
+Content-Type: {{json}}
+
+### Músicas por domingo
+GET {{baseUrl}}/api/songs-by-sunday/
+Content-Type: {{json}}
+
+### Top músicas
+GET {{baseUrl}}/api/top-songs/
+Content-Type: {{json}}
+
+### Músicas sugeridas (com fixos)
+GET {{baseUrl}}/api/suggested-songs/?fixed=1:176,2:107
+Content-Type: {{json}}
+
+### Hinário
+GET {{baseUrl}}/api/hymnal/
+Content-Type: {{json}}

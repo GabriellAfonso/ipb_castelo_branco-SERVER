@@ -1,0 +1,33 @@
+### Registrar usuário
+# @name register
+POST {{baseUrl}}/api/auth/register/
+Content-Type: {{json}}
+
+{
+  "username": "gabriel_test",
+  "first_name": "Teste",
+  "last_name": "JWT",
+  "password": "12345678",
+  "password_confirm": "12345678"
+}
+
+### Login
+# @name login
+POST {{baseUrl}}/api/auth/login/
+Content-Type: {{json}}
+
+{
+  "username": "gabrielafonso",
+  "password": "40028922"
+}
+> {%
+    client.global.set("auth_token", response.body.access);
+%}
+### Refresh Token
+# @name refresh
+POST {{baseUrl}}/api/auth/refresh/
+Content-Type: {{json}}
+
+{
+  "refresh": "{{login.response.body.refresh}}"
+}

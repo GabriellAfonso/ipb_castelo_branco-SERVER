@@ -1,0 +1,34 @@
+### Buscar escala atual
+# @name schedule_current
+GET {{baseUrl}}/api/schedule/current/
+Content-Type: {{json}}
+
+### Gerar preview do próximo mês
+# @name schedule_preview
+POST {{baseUrl}}/api/schedule/preview/
+Content-Type: {{json}}
+
+{}
+
+#### Salvar a escala (baseado no preview)
+#POST {{baseUrl}}/api/schedule/save/
+#Content-Type: {{json}}
+#
+#{
+#  "year": {{schedule_preview.response.body.year}},
+#  "month": {{schedule_preview.response.body.month}},
+#  "items": {{schedule_preview.response.body.items}}
+#}
+
+### Registrar Played (Admin)
+# @name register_played
+POST {{baseUrl}}/api/played/register/
+Authorization: Bearer {{auth_token}}
+Content-Type: {{json}}
+
+{
+  "date": "2026-02-07",
+  "plays": [
+    { "song_id": 1, "position": 1, "tone": "G" }
+  ]
+}

@@ -1,0 +1,18 @@
+
+
+### Listar todas as fotos
+GET {{baseUrl}}/api/photos/
+Authorization: Bearer {{auth_token}}
+Content-Type: {{json}}
+
+### Listar fotos de um álbum (por Nome/Slug)
+GET {{baseUrl}}/api/albums/viagem-2024/photos/
+Authorization: Bearer {{auth_token}}
+Content-Type: {{json}}
+
+#### Upload de fotos (Gambiarra)
+#POST {{baseUrl}}/api/gallery/upload/
+#Authorization: Bearer {{auth_token}}
+#Content-Type: multipart/form-data
+#
+#file=@./imagem_teste.jpg
