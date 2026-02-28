@@ -32,26 +32,25 @@ class RegisterAPI(APIView):
 
 
 class LoginAPI(APIView):
-
     @staticmethod
     def post(request: Request) -> Response:
+        invalid_credentials_error = Response(
+            {"detail": _("Nome de usuário ou senha inválidos.")},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+
         try:
             login_dto = LoginDTO(**request.data)
-        except ValidationError as e:
-            return Response(
-                {"detail": e.errors()},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        except ValidationError:
+            return invalid_credentials_error
 
-        user = authenticate(username=login_dto.username,
-                            password=login_dto.password)
+        user = authenticate(
+            username=login_dto.username,
+            password=login_dto.password
+        )
 
         if user is None:
-            return Response(
-                {"detail": _("Nome de usuário ou senha inválidos.")},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return invalid_credentials_error
 
         token_dto = get_tokens_for_user(user)
-
         return Response(token_dto.model_dump(), status=status.HTTP_200_OK)

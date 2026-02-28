@@ -1,6 +1,7 @@
 ### Buscar escala atual
 # @name schedule_current
 GET {{baseUrl}}/api/schedule/current/
+Authorization: Bearer {{auth_token}}
 Content-Type: {{json}}
 
 ### Gerar preview do próximo mês

@@ -4,7 +4,7 @@ POST {{baseUrl}}/api/auth/register/
 Content-Type: {{json}}
 
 {
-  "username": "gabriel_test",
+  "username": "teste_account",
   "first_name": "Teste",
   "last_name": "JWT",
   "password": "12345678",
@@ -17,8 +17,8 @@ POST {{baseUrl}}/api/auth/login/
 Content-Type: {{json}}
 
 {
-  "username": "gabrielafonso",
-  "password": "40028922"
+  "username": "teste_account",
+  "password": "12345678"
 }
 > {%
     client.global.set("auth_token", response.body.access);
