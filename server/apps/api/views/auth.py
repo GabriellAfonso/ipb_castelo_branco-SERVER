@@ -107,6 +107,7 @@ class GoogleLoginAPI(APIView):
                 return Response({"detail": "Erro ao criar usuário."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         if photo_url:
+            photo_url = photo_url.split("=s")[0] + "=s400-c"
             try:
                 profile = getattr(user, 'profile', None)
                 if profile and not profile.photo:

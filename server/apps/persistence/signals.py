@@ -10,9 +10,8 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(
             user=instance,
-            name=f"{instance.first_name} {instance.last_name}".strip().lower()
+            name=f"{instance.first_name} {instance.last_name}".strip().title()
         )
-
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
