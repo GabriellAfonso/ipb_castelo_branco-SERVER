@@ -29,6 +29,8 @@ SECRET_KEY = os.environ.get(
     "django-insecure-ufeshinhw3=4&-^bh08^e(sn&4t=vy6=7d8b-d%o+3)#7a@jpc",
 )
 
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", default="")
+
 DEBUG = env_bool("DJANGO_DEBUG", False)
 
 AUTH_USER_MODEL = "persistence.User"

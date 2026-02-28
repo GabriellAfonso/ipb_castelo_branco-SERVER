@@ -12,7 +12,10 @@ from core.application.dtos.auth_dtos import LoginDTO
 from apps.api.serializers.register_serializer import RegisterSerializer
 from config.dependencies import Container
 from core.domain.interfaces.repositories.user_repository import UserRepository
-
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from django.conf import settings
+from apps.persistence.models.profile import User
 
 class RegisterAPI(APIView):
 
@@ -51,6 +54,51 @@ class LoginAPI(APIView):
 
         if user is None:
             return invalid_credentials_error
+
+        token_dto = get_tokens_for_user(user)
+        return Response(token_dto.model_dump(), status=status.HTTP_200_OK)
+
+
+
+class GoogleLoginAPI(APIView):
+    @staticmethod
+    def post(request: Request) -> Response:
+        token = request.data.get("id_token")
+        if not token:
+            return Response({"detail": "id_token é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            idinfo = id_token.verify_oauth2_token(
+                token,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID
+            )
+        except ValueError:
+            return Response({"detail": "Token do Google inválido."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        google_id = idinfo["sub"]
+        email = idinfo.get("email", "")
+        first_name = idinfo.get("given_name", "")
+        last_name = idinfo.get("family_name", "")
+
+        # Pega ou cria o usuário pelo google_id ou email
+        user = User.objects.filter(email=email).first()
+        if not user:
+            username = email.split("@")[0]
+            # Garante username único
+            base = username
+            counter = 1
+            while User.objects.filter(username=username).exists():
+                username = f"{base}{counter}"
+                counter += 1
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            user.set_unusable_password()
+            user.save()
 
         token_dto = get_tokens_for_user(user)
         return Response(token_dto.model_dump(), status=status.HTTP_200_OK)

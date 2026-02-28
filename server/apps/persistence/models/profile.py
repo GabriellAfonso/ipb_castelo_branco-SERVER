@@ -33,4 +33,4 @@ class Profile(models.Model):
     is_admin = models.BooleanField(default=False)
 
     def __str__(self) -> str:
-        return self.user.username
+        return self.name

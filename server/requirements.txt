@@ -6,3 +6,5 @@ dependency-injector==4.48.3
 pydantic==2.12.5
 gunicorn==25.1.0
 dotenv==0.9.9
+google-auth>=2.0.0,<3.0.0
+requests==2.32.5

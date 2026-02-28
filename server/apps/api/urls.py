@@ -2,7 +2,7 @@ from django.urls import path
 from apps.api.views.gallery import PhotoListAPIView, AlbumPhotoListAPIView
 from apps.api.views.gambiarra import upload_photos
 from rest_framework_simplejwt.views import TokenRefreshView
-from apps.api.views.auth import LoginAPI, RegisterAPI
+from apps.api.views.auth import LoginAPI, RegisterAPI, GoogleLoginAPI
 from apps.api.views.hymnal import hymnalAPI
 from apps.api.views.members import MemberListAPIView
 from apps.api.views.profile import MeProfileAPIView, ProfilePhotoAPIView
@@ -44,6 +44,7 @@ urlpatterns = [
     # endregion
 
     # region 🔑 AUTH & PROFILE
+    path("api/auth/google/", GoogleLoginAPI.as_view(), name="google_login"),
     path("api/hymnal/", hymnalAPI.as_view(), name="hymnal"),
     path("api/auth/register/", RegisterAPI.as_view(), name="register"),
     path("api/auth/login/", LoginAPI.as_view(), name="login"),
