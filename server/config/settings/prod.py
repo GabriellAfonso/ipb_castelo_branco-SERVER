@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
-from config.settings.base import *  # noqa: F403
+from .base import *  # noqa: F403
+
+FORCE_SCRIPT_NAME = '/ipbcb'
 USE_X_FORWARDED_HOST = True
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
