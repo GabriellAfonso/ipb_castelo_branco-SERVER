@@ -10,7 +10,7 @@ from apps.songs.views.songs import (
     TopSongsAPI,
     TopTonesAPI,
     ChordChartListView,
-    LyricsDetailView,
+    LyricsListView,
 )
 
 urlpatterns = [
@@ -21,6 +21,6 @@ urlpatterns = [
     path("api/suggested-songs/", SuggestedSongsAPI.as_view(), name="suggested_songs"),
     path("api/hymnal/", hymnalAPI.as_view(), name="hymnal"),
     path("api/played/register/", RegisterSundayPlaysAPI.as_view(), name="register_sunday_plays"),
-    path("api/songs/<int:song_id>/chord-charts/", ChordChartListView.as_view(), name="chord_charts"),
-    path("api/songs/<int:song_id>/lyrics/", LyricsDetailView.as_view(), name="lyrics"),
+    path("api/chord-charts/", ChordChartListView.as_view(), name="chord_charts"),
+    path("api/lyrics/", LyricsListView.as_view(), name="lyrics"),
 ]

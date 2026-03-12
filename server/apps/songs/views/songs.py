@@ -172,13 +172,8 @@ class AllSongsAPI(APIView):
 
 class ChordChartListView(ListAPIView):
     serializer_class = ChordChartSerializer
+    queryset = ChordChart.objects.select_related("song").all()
 
-    def get_queryset(self):
-        return ChordChart.objects.filter(song_id=self.kwargs["song_id"]).select_related("song")
-
-
-class LyricsDetailView(RetrieveAPIView):
+class LyricsListView(ListAPIView):
     serializer_class = LyricsSerializer
-
-    def get_object(self):
-        return Lyrics.objects.select_related("song").get(song_id=self.kwargs["song_id"])
+    queryset = Lyrics.objects.select_related("song").all()
