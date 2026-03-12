@@ -5,7 +5,7 @@ from django.utils import timezone
 from datetime import date, datetime, timedelta
 from django.db import transaction
 
-from apps.persistence.models.schedule import (
+from apps.schedule.models.schedule import (
     ScheduleType,
     MemberScheduleConfig,
     MonthlySchedule,

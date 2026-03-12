@@ -1,6 +1,6 @@
 from typing import Optional, Protocol
 
-from apps.persistence.models.profile import User
+from apps.accounts.models.user import User
 from core.application.dtos.auth_dtos import RegisterDTO
 from uuid import UUID
 
