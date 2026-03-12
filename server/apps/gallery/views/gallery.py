@@ -9,6 +9,7 @@ from apps.gallery.serializers.serializers import PhotoListSerializer
 
 
 class PhotoListAPIView(APIView):
+    serializer_class = PhotoListSerializer
 
     @staticmethod
     def get(request):
@@ -28,7 +29,7 @@ class PhotoListAPIView(APIView):
 
 
 class AlbumPhotoListAPIView(APIView):
-
+    serializer_class = PhotoListSerializer
     def get(self, request, album_id):
         photos = (
             Photo.objects

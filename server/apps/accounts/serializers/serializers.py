@@ -81,6 +81,20 @@ class RegisterSerializer(serializers.Serializer[RegisterData]):
         )
 
 
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True)
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    id_token = serializers.CharField()
+
+
+class TokenSerializer(serializers.Serializer):
+    access = serializers.CharField(read_only=True)
+    refresh = serializers.CharField(read_only=True)
+
+
 class ProfilePhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile

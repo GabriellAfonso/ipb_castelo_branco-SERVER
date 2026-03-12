@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -9,7 +10,12 @@ from pydantic import ValidationError  # noqa
 
 from apps.accounts.auth.jwt import get_tokens_for_user
 from apps.accounts.models.user import User
-from apps.accounts.serializers.serializers import RegisterSerializer
+from apps.accounts.serializers.serializers import (
+    GoogleLoginSerializer,
+    LoginSerializer,
+    RegisterSerializer,
+    TokenSerializer,
+)
 from config.dependencies import Container
 from core.application.dtos.auth_dtos import LoginDTO
 from core.domain.interfaces.repositories.user_repository import UserRepository
@@ -23,6 +29,8 @@ from django.conf import settings
 
 class RegisterAPI(APIView):
 
+    serializer_class = RegisterSerializer
+    
     @inject
     def post(self, request: Request,
              user_repo: UserRepository = Provide[Container.user_repository]) -> Response:
@@ -39,8 +47,8 @@ class RegisterAPI(APIView):
 
 
 class LoginAPI(APIView):
-    @staticmethod
-    def post(request: Request) -> Response:
+    @extend_schema(request=LoginSerializer, responses={200: TokenSerializer, 401: None})
+    def post(self, request: Request) -> Response:
         invalid_credentials_error = Response(
             {"detail": _("Nome de usuário ou senha inválidos.")},
             status=status.HTTP_401_UNAUTHORIZED,
@@ -64,8 +72,8 @@ class LoginAPI(APIView):
 
 
 class GoogleLoginAPI(APIView):
-    @staticmethod
-    def post(request: Request) -> Response:
+    @extend_schema(request=GoogleLoginSerializer, responses={200: TokenSerializer, 400: None, 401: None})
+    def post(self, request: Request) -> Response:
         token = request.data.get("id_token")
         if not token:
             return Response({"detail": "id_token é obrigatório."}, status=status.HTTP_400_BAD_REQUEST)

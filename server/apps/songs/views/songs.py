@@ -41,6 +41,7 @@ def _parse_fixed_param(value: str) -> dict[int, int]:
 
 
 class SongsBySundayAPI(APIView):
+    serializer_class = PlayedSerializer
     def get(self, request):
         qs = (
             Played.objects.select_related("song").order_by("-date", "position")
