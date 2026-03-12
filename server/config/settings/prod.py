@@ -18,13 +18,15 @@ def _require_csv_env(name: str) -> list[str]:
     return [part.strip() for part in value.split(",") if part.strip()]
 
 
-# Hosts / CSRF (required in production)
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+
 ALLOWED_HOSTS = _require_csv_env("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = _require_csv_env("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 CSRF_COOKIE_PATH = "/ipbcb/"
 SESSION_COOKIE_PATH = "/ipbcb/"
 
-# Produção (recomendado)
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+
+
