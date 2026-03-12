@@ -28,4 +28,11 @@ SESSION_COOKIE_PATH = "/ipbcb/"
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
+# ─── API Docs — correct public server prefix behind nginx reverse proxy ────
+# nginx strips /ipbcb before forwarding to Django, so Swagger UI must know
+# the real public base to build "Try it out" request URLs correctly.
+SPECTACULAR_SETTINGS = {
+    "SERVERS": [{"url": "/ipbcb", "description": "Production"}],
+}
+
 
