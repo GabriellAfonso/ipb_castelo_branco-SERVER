@@ -1,5 +1,5 @@
-from django.db.models import IntegerField
-from django.db.models.functions import Cast, Substr
+from django.db.models import Func, IntegerField, Value
+from django.db.models.functions import Cast, NullIf
 from rest_framework.views import APIView
 
 from apps.songs.models.hymnal import Hymn
@@ -10,7 +10,18 @@ class hymnalAPI(APIView):
     def get(self, request):
         qs = (
             Hymn.objects.annotate(
-                number_int=Cast(Substr("number", 1, 10), IntegerField())
+                number_int=Cast(
+                    NullIf(
+                        Func(
+                            "number",
+                            Value("[^0-9].*"),
+                            Value(""),
+                            function="REGEXP_REPLACE",
+                        ),
+                        Value(""),
+                    ),
+                    IntegerField(),
+                )
             )
             .order_by("number_int", "number")
             .values("number", "title", "lyrics")
