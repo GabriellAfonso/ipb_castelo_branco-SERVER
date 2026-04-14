@@ -66,8 +66,8 @@ class RegisterSundayPlaysAPI(APIView):
             except (TypeError, ValueError):
                 return Response({"detail": f"plays[{idx}] song_id/position must be integers."}, status=400)
 
-            if position_int < 1 or position_int > 4:
-                return Response({"detail": f"plays[{idx}] position must be between 1 and 4."}, status=400)
+            if position_int < 1 or position_int > 10:
+                return Response({"detail": f"plays[{idx}] position must be between 1 and 10."}, status=400)
 
             cleaned_items.append(
                 {"song_id": song_id_int, "position": position_int, "tone": tone}
