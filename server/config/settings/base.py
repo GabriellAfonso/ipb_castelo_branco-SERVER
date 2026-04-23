@@ -2,15 +2,16 @@
 
 Keep environment-specific values in dev.py/prod.py.
 """
+
 from __future__ import annotations
 import dotenv
 
 dotenv.load_dotenv()
 
 
-import os
-from datetime import timedelta
-from pathlib import Path
+import os  # noqa: E402
+from datetime import timedelta  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -54,7 +55,6 @@ INSTALLED_APPS = [
     "features.schedule",
     "features.members",
     "features.gallery",
-
 ]
 
 MIDDLEWARE = [
@@ -87,7 +87,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 DATABASES = {
     "default": {
@@ -136,13 +136,9 @@ USE_TZ = True
 USE_I18N = True
 
 
-
 # Static/media
 STATIC_URL = "/ipbcb/static/"
 STATIC_ROOT = BASE_DIR / "static"
 
 MEDIA_URL = "/ipbcb/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
-
-

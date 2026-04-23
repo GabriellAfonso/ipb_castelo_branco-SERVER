@@ -1,7 +1,7 @@
 from features.core.application.dtos.strict_base import StrictBaseModel
-from pydantic import Field, field_validator
 from typing import Optional
-from pydantic import EmailStr
+
+from pydantic import Field, field_validator
 
 
 class RegisterDTO(StrictBaseModel):
@@ -14,6 +14,7 @@ class RegisterDTO(StrictBaseModel):
     @classmethod
     def normalize_username(cls, v: str) -> str:
         return v.strip().lower()
+
 
 class LoginDTO(StrictBaseModel):
     username: str = Field(..., min_length=1, max_length=150)
