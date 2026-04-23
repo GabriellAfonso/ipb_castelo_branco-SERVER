@@ -1,0 +1,6 @@
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]
+
+[tool.ruff]
+line-length = 100
