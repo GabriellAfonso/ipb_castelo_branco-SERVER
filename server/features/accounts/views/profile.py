@@ -1,3 +1,5 @@
+from typing import cast
+
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -6,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from features.accounts.models.profile import Profile
+from features.accounts.models.user import User
 from features.accounts.serializers.serializers import ProfilePhotoSerializer, ProfileSerializer
 from features.core.http.utils import _not_modified_or_response
 
@@ -19,7 +22,7 @@ class ProfilePhotoAPIView(APIView):
         """
         Cria ou substitui a foto de perfil do usuário autenticado
         """
-        user = request.user
+        user = cast(User, request.user)
 
         profile, _ = Profile.objects.get_or_create(user=user)
 
@@ -60,7 +63,7 @@ class MeProfileAPIView(APIView):
 
     @staticmethod
     def get_object(request: Request) -> Profile:
-        profile, _ = Profile.objects.get_or_create(user=request.user)
+        profile, _ = Profile.objects.get_or_create(user=cast(User, request.user))
         return profile
 
     def get(self, request: Request) -> Response:
