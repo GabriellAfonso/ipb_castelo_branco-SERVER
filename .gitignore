@@ -66,8 +66,6 @@ celerybeat-schedule.*
 
 # ─── Ambiente / Segredos ──────────────────────────────────────────────────────
 .env
-compose.prod.yml
-compose.yml
 
 # ─── Jupyter ──────────────────────────────────────────────────────────────────
 .ipynb_checkpoints
@@ -81,10 +79,7 @@ out/
 atlassian-ide-plugin.xml
 
 # VS Code
-.vscode/*
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/
 .history
 
 # ─── Misc ─────────────────────────────────────────────────────────────────────
