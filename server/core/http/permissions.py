@@ -23,6 +23,8 @@ class IsAdminUser(permissions.BasePermission):
     Permite acesso apenas a usuários que possuem um perfil com is_admin = True.
     """
 
+    message = "Acesso restrito a administradores."
+
     def has_permission(self, request: Request, view: APIView) -> bool:
         return bool(
             request.user
