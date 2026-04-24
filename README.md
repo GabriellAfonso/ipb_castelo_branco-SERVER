@@ -31,10 +31,9 @@ API REST do sistema de gerenciamento da **Igreja Presbiteriana de Castelo Branco
 |---|---|
 | `accounts` | Autenticação, cadastro e perfis de usuário |
 | `members` | Diretório de membros da igreja |
-| `songs` | Repertório, hinário e histórico de músicas tocadas |
+| `songs` | Repertório, hinário, cifras e histórico de músicas tocadas |
 | `schedule` | Geração automática da escala mensal |
 | `gallery` | Álbuns e upload de fotos |
-| `chord-charts` | Cifras das músicas |
 
 ---
 
