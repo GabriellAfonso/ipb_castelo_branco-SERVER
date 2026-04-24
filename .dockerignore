@@ -1,0 +1,63 @@
+# ─── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# ─── Virtual Environments ─────────────────────────────────────────────────────
+.venv/
+.venv_windows/
+.venv_linux/
+venv/
+env/
+ENV/
+wsl_venv/
+
+# ─── Django ───────────────────────────────────────────────────────────────────
+server/media/
+server/static/
+server/db.sqlite3
+*.log
+
+# ─── Testes / Cobertura ───────────────────────────────────────────────────────
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.tox/
+.hypothesis/
+htmlcov/
+coverage.xml
+*.cover
+
+# ─── Type Checking / Linting ──────────────────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+docker-compose.yml
+compose.prod.yml
+dockerfile
+.dockerignore
+
+# ─── Ambiente / Segredos ──────────────────────────────────────────────────────
+.env
+
+# ─── IDEs / Editores ──────────────────────────────────────────────────────────
+.idea/
+.vscode/
+.history
+*.iws
+
+# ─── Git ──────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ─── Docs / Misc ──────────────────────────────────────────────────────────────
+README.md
+CLAUDE.md
+LICENSE
+TESTS.md
+*.bak
+http/
