@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from features.core.http.permissions import IsAdminUser, IsMemberUser
+from core.http.permissions import IsAdminUser, IsMemberUser
 
 
 def _make_request(user: object | None = None) -> MagicMock:

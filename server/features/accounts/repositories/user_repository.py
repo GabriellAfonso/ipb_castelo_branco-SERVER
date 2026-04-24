@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import UUID
 
 from features.accounts.models.user import User
-from features.core.application.dtos.auth_dtos import RegisterDTO
+from core.application.dtos.auth_dtos import RegisterDTO
 from features.accounts.repositories.interfaces import UserRepository
 
 

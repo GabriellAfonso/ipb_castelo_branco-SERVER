@@ -6,7 +6,7 @@ from rest_framework.request import Request
 
 from features.accounts.models.profile import Profile
 from features.accounts.models.user import User
-from features.core.application.dtos.auth_dtos import RegisterDTO
+from core.application.dtos.auth_dtos import RegisterDTO
 
 
 class RegisterData(TypedDict):

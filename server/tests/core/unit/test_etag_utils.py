@@ -1,7 +1,7 @@
 from django.test import RequestFactory
 from rest_framework.request import Request
 
-from features.core.http.utils import _make_etag_from_data, _not_modified_or_response
+from core.http.utils import _make_etag_from_data, _not_modified_or_response
 
 
 def _make_drf_request(if_none_match: str | None = None) -> Request:

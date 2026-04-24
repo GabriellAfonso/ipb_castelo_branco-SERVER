@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from features.core.application.dtos.strict_base import StrictBaseModel
+from core.application.dtos.strict_base import StrictBaseModel
 
 
 class SampleDTO(StrictBaseModel):

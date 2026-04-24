@@ -1,7 +1,7 @@
 from typing import Optional, Protocol
 
 from features.accounts.models.user import User
-from features.core.application.dtos.auth_dtos import RegisterDTO
+from core.application.dtos.auth_dtos import RegisterDTO
 from uuid import UUID
 
 

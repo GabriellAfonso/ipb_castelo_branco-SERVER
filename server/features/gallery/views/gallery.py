@@ -3,7 +3,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from features.core.http.permissions import IsMemberUser
+from core.http.permissions import IsMemberUser
 from features.gallery.models.gallery import Photo
 from features.gallery.serializers.serializers import PhotoListSerializer
 

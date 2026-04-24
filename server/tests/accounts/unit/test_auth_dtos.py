@@ -1,6 +1,6 @@
 import pytest
 from pydantic import ValidationError
-from features.core.application.dtos.auth_dtos import LoginDTO, RegisterDTO, TokenDTO
+from core.application.dtos.auth_dtos import LoginDTO, RegisterDTO, TokenDTO
 
 
 def test_register_dto_normalizes_username() -> None:

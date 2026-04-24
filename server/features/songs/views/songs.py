@@ -18,7 +18,7 @@ from features.songs.serializers.serializers import (
     ChordChartSerializer,
     LyricsSerializer,
 )
-from features.core.http.utils import _not_modified_or_response
+from core.http.utils import _not_modified_or_response
 
 
 def _parse_fixed_param(value: str) -> dict[int, int]:

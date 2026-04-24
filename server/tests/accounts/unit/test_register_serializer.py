@@ -1,6 +1,6 @@
 import pytest
 from features.accounts.serializers.serializers import RegisterSerializer
-from features.core.application.dtos.auth_dtos import RegisterDTO
+from core.application.dtos.auth_dtos import RegisterDTO
 
 VALID_DATA = {
     "username": "testuser",

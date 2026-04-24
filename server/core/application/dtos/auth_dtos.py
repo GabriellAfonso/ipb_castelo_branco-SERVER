@@ -1,4 +1,4 @@
-from features.core.application.dtos.strict_base import StrictBaseModel
+from core.application.dtos.strict_base import StrictBaseModel
 from typing import Optional
 
 from pydantic import Field, field_validator

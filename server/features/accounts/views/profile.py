@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from features.accounts.models.profile import Profile
 from features.accounts.models.user import User
 from features.accounts.serializers.serializers import ProfilePhotoSerializer, ProfileSerializer
-from features.core.http.utils import _not_modified_or_response
+from core.http.utils import _not_modified_or_response
 
 
 class ProfilePhotoAPIView(APIView):

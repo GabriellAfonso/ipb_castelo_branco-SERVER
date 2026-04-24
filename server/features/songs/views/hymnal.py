@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from features.songs.models.hymnal import Hymn
-from features.core.http.utils import _not_modified_or_response
+from core.http.utils import _not_modified_or_response
 
 
 class hymnalAPI(APIView):

@@ -2,7 +2,7 @@ import pytest
 
 from features.accounts.models.user import User
 from features.accounts.repositories.user_repository import DjangoUserRepository
-from features.core.application.dtos.auth_dtos import RegisterDTO
+from core.application.dtos.auth_dtos import RegisterDTO
 
 
 @pytest.fixture
