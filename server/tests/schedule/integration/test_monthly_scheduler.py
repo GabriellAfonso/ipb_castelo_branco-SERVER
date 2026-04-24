@@ -5,7 +5,7 @@ from unittest.mock import patch
 from django.db import IntegrityError
 from django.utils import timezone
 
-from features.core.application.services.monthly_scheduler import (
+from features.schedule.services.monthly_scheduler import (
     generate_monthly_schedule_preview,
     save_monthly_schedule,
 )
@@ -71,7 +71,7 @@ def test_preview_returns_correct_year_and_month() -> None:
 def test_preview_defaults_to_next_month() -> None:
     real_date = date
 
-    with patch("features.core.application.services.monthly_scheduler.date") as mock_date:
+    with patch("features.schedule.services.monthly_scheduler.date") as mock_date:
         mock_date.today.return_value = real_date(2026, 4, 15)
         mock_date.side_effect = lambda *a, **kw: real_date(*a, **kw)
 

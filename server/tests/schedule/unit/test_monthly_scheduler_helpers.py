@@ -1,7 +1,7 @@
 import calendar
 from datetime import date
 
-from features.core.application.services.monthly_scheduler import (
+from features.schedule.services.monthly_scheduler import (
     _next_month_from,
     _month_dates_for_weekday,
 )

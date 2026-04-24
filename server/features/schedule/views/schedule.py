@@ -9,7 +9,7 @@ from rest_framework.views import APIView
 
 from features.accounts.permissions import IsAdminUser
 from features.schedule.models.schedule import MonthlySchedule
-from features.core.application.services.monthly_scheduler import (
+from features.schedule.services.monthly_scheduler import (
     generate_monthly_schedule_preview,
     save_monthly_schedule,
 )
