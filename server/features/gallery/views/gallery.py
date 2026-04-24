@@ -3,12 +3,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from features.core.http.permissions import IsMemberUser
 from features.gallery.models.gallery import Photo
 from features.gallery.serializers.serializers import PhotoListSerializer
 
 
 class PhotoListAPIView(APIView):
     serializer_class = PhotoListSerializer
+    permission_classes = [IsMemberUser]
 
     @staticmethod
     def get(request: Request) -> Response:
@@ -21,6 +23,7 @@ class PhotoListAPIView(APIView):
 
 class AlbumPhotoListAPIView(APIView):
     serializer_class = PhotoListSerializer
+    permission_classes = [IsMemberUser]
 
     def get(self, request: Request, album_id: int) -> Response:
         photos = (

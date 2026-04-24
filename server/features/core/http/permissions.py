@@ -8,6 +8,8 @@ class IsMemberUser(permissions.BasePermission):
     Permite acesso apenas a usuários que possuem um perfil com is_member = True.
     """
 
+    message = "Disponível apenas para membros."
+
     def has_permission(self, request: Request, view: APIView) -> bool:
         return bool(
             request.user

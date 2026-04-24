@@ -7,7 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from features.core.http.permissions import IsAdminUser
+from features.core.http.permissions import IsAdminUser, IsMemberUser
 from features.schedule.models.schedule import MonthlySchedule
 from features.schedule.services.monthly_scheduler import (
     generate_monthly_schedule_preview,
@@ -35,6 +35,8 @@ def _group_monthly_schedule_qs(schedules: QuerySet[MonthlySchedule]) -> dict[str
 
 
 class CurrentMonthlyScheduleAPI(APIView):
+    permission_classes = [IsMemberUser]
+
     @staticmethod
     def get(request: Request) -> Response:
         today = date.today()
