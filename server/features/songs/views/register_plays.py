@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from features.accounts.permissions import IsAdminUser
+from features.core.http.permissions import IsAdminUser
 from features.songs.models.song import Played, Song
 
 
