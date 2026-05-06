@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class SongsConfig(AppConfig):
-    name = 'features.songs'
+    name = "features.songs"

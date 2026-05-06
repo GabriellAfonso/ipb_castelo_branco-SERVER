@@ -6,49 +6,86 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('members', '0001_initial'),
+        ("members", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ScheduleType',
+            name="ScheduleType",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100)),
-                ('weekday', models.PositiveSmallIntegerField()),
-                ('time', models.TimeField()),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("name", models.CharField(max_length=100)),
+                ("weekday", models.PositiveSmallIntegerField()),
+                ("time", models.TimeField()),
             ],
         ),
         migrations.CreateModel(
-            name='MonthlySchedule',
+            name="MonthlySchedule",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('year', models.PositiveIntegerField(editable=False)),
-                ('month', models.PositiveSmallIntegerField(editable=False)),
-                ('date', models.DateField()),
-                ('created_at', models.DateTimeField(default=django.utils.timezone.now, editable=False)),
-                ('member', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='members.member')),
-                ('schedule_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='schedule.scheduletype')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("year", models.PositiveIntegerField(editable=False)),
+                ("month", models.PositiveSmallIntegerField(editable=False)),
+                ("date", models.DateField()),
+                (
+                    "created_at",
+                    models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                ),
+                (
+                    "member",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="members.member"
+                    ),
+                ),
+                (
+                    "schedule_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="schedule.scheduletype"
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('schedule_type', 'date')},
+                "unique_together": {("schedule_type", "date")},
             },
         ),
         migrations.CreateModel(
-            name='MemberScheduleConfig',
+            name="MemberScheduleConfig",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('available', models.BooleanField(default=True)),
-                ('weight', models.PositiveIntegerField(default=1)),
-                ('member', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='members.member')),
-                ('schedule_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='schedule.scheduletype')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("available", models.BooleanField(default=True)),
+                ("weight", models.PositiveIntegerField(default=1)),
+                (
+                    "member",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="members.member"
+                    ),
+                ),
+                (
+                    "schedule_type",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE, to="schedule.scheduletype"
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('member', 'schedule_type')},
+                "unique_together": {("member", "schedule_type")},
             },
         ),
     ]

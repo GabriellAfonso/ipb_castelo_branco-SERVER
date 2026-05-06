@@ -5,10 +5,11 @@ from __future__ import annotations
 import os
 from config.settings.base import *  # noqa: F403
 
-FORCE_SCRIPT_NAME = '/ipbcb'
+FORCE_SCRIPT_NAME = "/ipbcb"
 USE_X_FORWARDED_HOST = True
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 
 def _require_csv_env(name: str) -> list[str]:
     value = (os.environ.get(name) or "").strip()
@@ -34,5 +35,3 @@ SESSION_COOKIE_SECURE = True
 SPECTACULAR_SETTINGS = {
     "SERVERS": [{"url": "/ipbcb", "description": "Production"}],
 }
-
-

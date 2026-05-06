@@ -5,35 +5,58 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('songs', '0001_initial'),
+        ("songs", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Lyrics',
+            name="Lyrics",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content', models.TextField()),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('song', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='lyrics', to='songs.song')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("content", models.TextField()),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "song",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lyrics",
+                        to="songs.song",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ChordChart',
+            name="ChordChart",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('content', models.TextField()),
-                ('tone', models.CharField(blank=True, max_length=3)),
-                ('instrument', models.CharField(blank=True, max_length=50)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('song', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='chord_charts', to='songs.song')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("content", models.TextField()),
+                ("tone", models.CharField(blank=True, max_length=3)),
+                ("instrument", models.CharField(blank=True, max_length=50)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "song",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="chord_charts",
+                        to="songs.song",
+                    ),
+                ),
             ],
             options={
-                'unique_together': {('song', 'tone', 'instrument')},
+                "unique_together": {("song", "tone", "instrument")},
             },
         ),
     ]

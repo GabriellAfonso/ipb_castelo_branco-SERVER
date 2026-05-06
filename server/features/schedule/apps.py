@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class ScheduleConfig(AppConfig):
-    name = 'features.schedule'
+    name = "features.schedule"
