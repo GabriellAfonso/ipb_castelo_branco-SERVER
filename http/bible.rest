@@ -1,0 +1,8 @@
+### Listar versões disponíveis
+GET {{baseUrl}}/api/bible/
+
+### Buscar bíblia NAA
+GET {{baseUrl}}/api/bible/NAA/
+
+### Buscar bíblia ARA
+GET {{baseUrl}}/api/bible/ARA/
