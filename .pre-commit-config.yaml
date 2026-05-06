@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: bash -c 'cd server && /workspace/backend/wsl_venv/bin/python -m mypy .'
+        entry: bash -c 'cd server && /workspace/venv/bin/python -m mypy .'
         language: system
         types: [python]
         pass_filenames: false
