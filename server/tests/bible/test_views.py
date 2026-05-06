@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import pytest
 from rest_framework.test import APIClient
 from unittest.mock import patch
@@ -9,7 +11,7 @@ SAMPLE_BIBLE = [{"abbrev": "Gn", "name": "Gênesis", "chapters": [["No princípi
 
 
 @pytest.fixture(autouse=True)
-def mock_bibles() -> None:
+def mock_bibles() -> Generator[None, None, None]:
     with patch("features.bible.views.BIBLES", {"nvi": SAMPLE_BIBLE, "arc": SAMPLE_BIBLE}):
         yield
 
