@@ -9,7 +9,7 @@ SAMPLE_BIBLE = [{"abbrev": "Gn", "name": "Gênesis", "chapters": [["No princípi
 
 
 @pytest.fixture(autouse=True)
-def mock_bibles():
+def mock_bibles() -> None:
     with patch("features.bible.views.BIBLES", {"nvi": SAMPLE_BIBLE, "arc": SAMPLE_BIBLE}):
         yield
 
