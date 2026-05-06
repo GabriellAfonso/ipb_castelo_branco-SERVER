@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "features.schedule",
     "features.members",
     "features.gallery",
+    "features.bible",
 ]
 
 MIDDLEWARE = [

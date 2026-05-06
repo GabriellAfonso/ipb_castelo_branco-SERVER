@@ -21,6 +21,7 @@ urlpatterns = [
     path("", include("features.schedule.urls")),
     path("", include("features.members.urls")),
     path("", include("features.gallery.urls")),
+    path("", include("features.bible.urls")),
 ]
 
 if settings.DEBUG:
