@@ -6,6 +6,7 @@ from typing import Any
 from django.db.models import Count
 from django.utils.timezone import now
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -50,6 +51,7 @@ def _parse_fixed_param(value: str) -> dict[int, int]:
 
 
 class SongsBySundayAPI(APIView):
+    permission_classes = [AllowAny]
     serializer_class = PlayedSerializer
 
     def get(self, request: Request) -> Response:
@@ -73,6 +75,8 @@ class SongsBySundayAPI(APIView):
 
 
 class TopSongsAPI(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request: Request) -> Response:
         qs = (
             Played.objects.values("song__title")
@@ -84,6 +88,8 @@ class TopSongsAPI(APIView):
 
 
 class TopTonesAPI(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request: Request) -> Response:
         qs = (
             Played.objects.values("tone").annotate(tone_count=Count("tone")).order_by("-tone_count")
@@ -93,6 +99,8 @@ class TopTonesAPI(APIView):
 
 
 class SuggestedSongsAPI(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request: Request) -> Response:
         fixed_param = request.query_params.get("fixed", "")
         fixed_by_position = _parse_fixed_param(fixed_param)
@@ -152,6 +160,8 @@ class SuggestedSongsAPI(APIView):
 
 
 class AllSongsAPI(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request: Request) -> Response:
         qs = (
             Song.objects.select_related("category")
@@ -172,10 +182,12 @@ class AllSongsAPI(APIView):
 
 
 class ChordChartListView(ListAPIView[ChordChart]):
+    permission_classes = [AllowAny]
     serializer_class = ChordChartSerializer
     queryset = ChordChart.objects.select_related("song").all()
 
 
 class LyricsListView(ListAPIView[Lyrics]):
+    permission_classes = [AllowAny]
     serializer_class = LyricsSerializer
     queryset = Lyrics.objects.select_related("song").all()

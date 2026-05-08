@@ -31,14 +31,6 @@ class RegisterSundayPlaysAPI(APIView):
 
     @staticmethod
     def post(request: Request) -> Response:
-        user = request.user
-        if not user or not getattr(user, "is_authenticated", False):
-            return Response({"detail": "Authentication required."}, status=401)
-
-        profile = getattr(user, "profile", None)
-        if not profile or not getattr(profile, "is_admin", False):
-            return Response({"detail": "Admin privileges required."}, status=403)
-
         payload = request.data or {}
         date_str = (payload.get("date") or "").strip()
         plays = payload.get("plays")

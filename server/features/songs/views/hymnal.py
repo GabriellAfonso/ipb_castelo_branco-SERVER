@@ -1,5 +1,6 @@
 from django.db.models import Func, IntegerField, Value
 from django.db.models.functions import Cast, NullIf
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,6 +10,8 @@ from core.http.utils import _not_modified_or_response
 
 
 class hymnalAPI(APIView):
+    permission_classes = [AllowAny]
+
     def get(self, request: Request) -> Response:
         qs = (
             Hymn.objects.annotate(
