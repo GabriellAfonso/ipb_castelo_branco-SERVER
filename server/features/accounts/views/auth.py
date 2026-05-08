@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from dependency_injector.wiring import inject, Provide
 from pydantic import ValidationError  # noqa
@@ -32,6 +33,8 @@ logger = logging.getLogger(__name__)
 
 class RegisterAPI(APIView):
     serializer_class = RegisterSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
 
     @inject
     def post(
@@ -49,6 +52,9 @@ class RegisterAPI(APIView):
 
 
 class LoginAPI(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
     @extend_schema(request=LoginSerializer, responses={200: TokenSerializer, 401: None})
     def post(self, request: Request) -> Response:
         invalid_credentials_error = Response(
@@ -71,6 +77,9 @@ class LoginAPI(APIView):
 
 
 class GoogleLoginAPI(APIView):
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
     @extend_schema(
         request=GoogleLoginSerializer, responses={200: TokenSerializer, 400: None, 401: None}
     )
@@ -88,6 +97,11 @@ class GoogleLoginAPI(APIView):
         except ValueError:
             return Response(
                 {"detail": "Token do Google inválido."}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if not idinfo.get("email_verified"):
+            return Response(
+                {"detail": "Conta Google sem email verificado."}, status=status.HTTP_400_BAD_REQUEST
             )
 
         email = idinfo.get("email", "")

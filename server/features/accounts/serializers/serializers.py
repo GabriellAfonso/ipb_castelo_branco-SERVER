@@ -30,7 +30,7 @@ class RegisterSerializer(serializers.Serializer[RegisterData]):
         normalized = value.strip().lower()
         if User.objects.filter(username=normalized).exists():
             raise serializers.ValidationError(_("Este nome de usuário já está em uso."))
-        return value
+        return normalized
 
     first_name = serializers.CharField(
         max_length=30,
