@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from datetime import date
 from typing import Any
@@ -8,12 +9,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.http.permissions import IsAdminUser, IsMemberUser
+from core.http.utils import _not_modified_or_response
 from features.schedule.models.schedule import MonthlySchedule
 from features.schedule.services.monthly_scheduler import (
     generate_monthly_schedule_preview,
     save_monthly_schedule,
 )
-from core.http.utils import _not_modified_or_response
+
+logger = logging.getLogger(__name__)
 
 
 def _group_monthly_schedule_qs(schedules: QuerySet[MonthlySchedule]) -> dict[str, Any]:
@@ -139,4 +142,5 @@ class MonthlyScheduleSaveAPI(APIView):
             return Response({"error": str(e)}, status=400)
 
         except Exception as e:
-            return Response({"error": "Erro interno ao salvar escala: " + str(e)}, status=500)
+            logger.exception("Failed to save monthly schedule: %s", e)
+            return Response({"error": "Erro interno ao salvar escala."}, status=500)
