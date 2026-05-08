@@ -19,6 +19,7 @@ def _require_csv_env(name: str) -> list[str]:
 
 
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+GOOGLE_CLIENT_ID = os.environ["GOOGLE_CLIENT_ID"]
 
 ALLOWED_HOSTS = _require_csv_env("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = _require_csv_env("DJANGO_CSRF_TRUSTED_ORIGINS")
@@ -28,6 +29,12 @@ SESSION_COOKIE_PATH = "/ipbcb/"
 
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
+
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
 
 # ─── API Docs — correct public server prefix behind nginx reverse proxy ────
 # nginx strips /ipbcb before forwarding to Django, so Swagger UI must know
