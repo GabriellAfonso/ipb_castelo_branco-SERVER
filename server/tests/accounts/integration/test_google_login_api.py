@@ -15,7 +15,12 @@ def _google_payload(
     family_name: str = "User",
     picture: str | None = None,
 ) -> dict[str, Any]:
-    payload: dict[str, Any] = {"email": email, "given_name": given_name, "family_name": family_name}
+    payload: dict[str, Any] = {
+        "email": email,
+        "email_verified": True,
+        "given_name": given_name,
+        "family_name": family_name,
+    }
     if picture:
         payload["picture"] = picture
     return payload
