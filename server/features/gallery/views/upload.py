@@ -4,6 +4,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect
+from django.utils.html import escape
 from PIL import Image
 
 from features.gallery.models.gallery import Album, Photo
@@ -28,7 +29,7 @@ def _build_upload_html(
 ) -> str:
     csrf_token = get_token(request)
     options = "".join(f'<option value="{album.pk}">{album.name}</option>' for album in albums)
-    errors_html = "".join(f'<p style="color:red">{e}</p>' for e in (errors or []))
+    errors_html = "".join(f'<p style="color:red">{escape(e)}</p>' for e in (errors or []))
     return f"""
     <html>
     <body>
