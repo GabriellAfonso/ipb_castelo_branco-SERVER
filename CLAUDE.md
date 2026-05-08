@@ -25,36 +25,7 @@ Deploy: Docker + Gunicorn + Uvicorn workers, atrás de nginx (base path /ipbcb/)
 
 ---
 
-## 3. Fluxo de Trabalho — Plano Antes de Agir
 
-**Para qualquer tarefa que envolva criar ou modificar código, o Claude DEVE:**
-
-1. **Apresentar um plano** antes de escrever qualquer linha de código. O plano deve conter:
-   - Quais arquivos serão criados ou modificados
-   - O que cada arquivo fará (em uma frase)
-   - Se alguma dependência nova será necessária
-   - Riscos ou pontos de atenção identificados
-
-2. **Aguardar confirmação** do usuário ("pode aplicar", "ok", "vai", ou similar).
-
-3. **Só então implementar.**
-
-Exemplo de formato de plano:
-```
-📋 Plano de implementação:
-
-Criar:
-  - features/orders/services/create_order.py — lógica de criação do pedido
-  - features/orders/repositories/order_repository.py — acesso ao banco
-
-Modificar:
-  - features/orders/urls.py — adicionar rota POST /orders/
-
-Dependências novas: nenhuma
-Riscos: nenhum identificado
-
-Posso aplicar?
-```
 
 ---
 
@@ -226,6 +197,8 @@ class OrderRepository:
 - Permissões explícitas em toda view que exige autenticação.
 - `DEBUG = False` em produção. Nunca exponha tracebacks.
 - Nunca use `.raw()` ou `format()` em SQL com input do usuário. Use o ORM.
+- **Política de senhas:** sem validadores de complexidade — o usuário pode usar a senha que quiser. Não sugira adicionar `CommonPasswordValidator`, `NumericPasswordValidator` ou similares.
+- **OpenAPI schema público:** intencional. Risco aceito — app interno de igreja sem dados sensíveis. Não sugira restringir ou remover os endpoints de schema.
 
 ---
 
