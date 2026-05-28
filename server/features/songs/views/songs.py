@@ -63,6 +63,7 @@ class SongsBySundayAPI(APIView):
         for item in data:
             grouped[item["date"]].append(
                 {
+                    "song_id": item["song"]["id"],
                     "position": item["position"],
                     "song": item["song"]["title"],
                     "artist": item["song"]["artist"],
@@ -79,7 +80,7 @@ class TopSongsAPI(APIView):
 
     def get(self, request: Request) -> Response:
         qs = (
-            Played.objects.values("song__title")
+            Played.objects.values("song_id", "song__title")
             .annotate(play_count=Count("song"))
             .order_by("-play_count")
         )

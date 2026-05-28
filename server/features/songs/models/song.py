@@ -12,6 +12,7 @@ class Song(models.Model):
     title = models.CharField(max_length=100)
     artist = models.CharField(max_length=100)
     category = models.ForeignKey(Category, null=True, blank=True, on_delete=models.SET_NULL)
+    youtube_link = models.URLField(max_length=200, blank=True, default="")
 
     def __str__(self) -> str:
         return f"{self.title} ------- {self.artist}"
