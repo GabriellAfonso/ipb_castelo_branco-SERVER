@@ -4,7 +4,7 @@ import tempfile
 import pytest
 from django.test import override_settings
 
-from tests.conftest import make_user
+from core.conftest import make_user
 
 
 @pytest.mark.django_db

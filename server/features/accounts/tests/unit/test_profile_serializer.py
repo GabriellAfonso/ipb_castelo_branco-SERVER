@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import Mock
 from features.accounts.serializers.serializers import ProfileSerializer
-from tests.conftest import make_user
+from core.conftest import make_user
 
 
 def test_photo_url_returns_absolute_uri() -> None:

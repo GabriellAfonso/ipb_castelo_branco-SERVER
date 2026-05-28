@@ -3,7 +3,7 @@ from typing import Any
 from unittest.mock import patch
 from rest_framework.test import APIClient
 from features.accounts.models.user import User
-from tests.conftest import make_user
+from core.conftest import make_user
 
 GOOGLE_URL = "/api/auth/google/"
 MOCK_PATH = "features.accounts.views.auth.id_token.verify_oauth2_token"

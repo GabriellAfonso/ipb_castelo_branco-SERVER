@@ -7,7 +7,7 @@ from django.test import override_settings
 from PIL import Image
 from rest_framework.test import APIClient
 
-from tests.conftest import make_auth_client, make_user
+from core.conftest import make_auth_client, make_user
 
 PROFILE_URL = "/api/me/profile/"
 PHOTO_URL = "/api/me/profile/photo/"

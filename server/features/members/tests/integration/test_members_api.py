@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from features.members.models.member import Member
-from tests.conftest import make_auth_client, make_member_client, make_user
+from core.conftest import make_auth_client, make_member_client, make_user
 
 
 ENDPOINT = "/api/members/"

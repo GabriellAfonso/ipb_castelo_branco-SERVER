@@ -11,7 +11,7 @@ from features.schedule.models.schedule import (
     MonthlySchedule,
     ScheduleType,
 )
-from tests.conftest import make_admin_client, make_member_client, make_user, make_auth_client
+from core.conftest import make_admin_client, make_member_client, make_user, make_auth_client
 
 
 # --- Helpers ---

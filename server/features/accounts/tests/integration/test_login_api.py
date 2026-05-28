@@ -1,6 +1,6 @@
 import pytest
 from rest_framework.test import APIClient
-from tests.conftest import make_user
+from core.conftest import make_user
 
 LOGIN_URL = "/api/auth/login/"
 
