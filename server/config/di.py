@@ -1,9 +1,34 @@
 from dependency_injector import containers, providers
 
+from features.accounts.repositories.profile_repository import DjangoProfileRepository
 from features.accounts.repositories.user_repository import DjangoUserRepository
+from features.accounts.services.google_auth_service import GoogleAuthService
+from features.accounts.services.login_service import LoginService
+from features.accounts.services.profile_service import ProfileService
+from features.accounts.services.register_service import RegisterService
+from features.bible.repositories import JsonFileBibleRepository
+from features.bible.services import BibleService
+from features.gallery.repositories.gallery_repository import DjangoGalleryRepository
+from features.gallery.services.gallery_service import GalleryService
 
 
 class Container(containers.DeclarativeContainer):
     wiring_config = containers.WiringConfiguration(packages=["features"])
 
     user_repository = providers.Factory(DjangoUserRepository)
+    profile_repository = providers.Factory(DjangoProfileRepository)
+
+    register_service = providers.Factory(RegisterService, user_repository=user_repository)
+    login_service = providers.Factory(LoginService)
+    google_auth_service = providers.Factory(
+        GoogleAuthService,
+        user_repository=user_repository,
+        profile_repository=profile_repository,
+    )
+    profile_service = providers.Factory(ProfileService, profile_repository=profile_repository)
+
+    bible_repository = providers.Singleton(JsonFileBibleRepository)
+    bible_service = providers.Factory(BibleService, bible_repository=bible_repository)
+
+    gallery_repository = providers.Factory(DjangoGalleryRepository)
+    gallery_service = providers.Factory(GalleryService, repository=gallery_repository)

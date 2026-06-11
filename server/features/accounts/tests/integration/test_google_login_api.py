@@ -3,10 +3,10 @@ from typing import Any
 from unittest.mock import patch
 from rest_framework.test import APIClient
 from features.accounts.models.user import User
-from core.conftest import make_user
+from conftest import make_user
 
 GOOGLE_URL = "/api/auth/google/"
-MOCK_PATH = "features.accounts.views.auth.id_token.verify_oauth2_token"
+MOCK_PATH = "features.accounts.services.google_auth_service.id_token.verify_oauth2_token"
 
 
 def _google_payload(
@@ -95,7 +95,7 @@ def test_google_login_photo_download_failure_still_succeeds() -> None:
     with (
         patch(MOCK_PATH, return_value=payload),
         patch(
-            "features.accounts.views.auth.http_requests.get",
+            "features.accounts.services.google_auth_service.http_requests.get",
             side_effect=__import__("requests").RequestException("network error"),
         ),
     ):

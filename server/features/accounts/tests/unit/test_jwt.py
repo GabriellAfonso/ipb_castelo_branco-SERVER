@@ -1,7 +1,7 @@
 import pytest
 from features.accounts.auth.jwt import get_tokens_for_user
 from core.application.dtos.auth_dtos import TokenDTO
-from core.conftest import make_user
+from conftest import make_user
 
 
 @pytest.mark.django_db

@@ -1,5 +1,6 @@
 from typing import cast
 
+from dependency_injector.wiring import inject, Provide
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
@@ -7,9 +8,10 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from features.accounts.models.profile import Profile
 from features.accounts.models.user import User
-from features.accounts.serializers.serializers import ProfilePhotoSerializer, ProfileSerializer
+from features.accounts.serializers.serializers import ProfileSerializer
+from features.accounts.services.profile_service import ProfileService
+from config.di import Container
 from core.http.utils import _not_modified_or_response
 
 
@@ -17,18 +19,18 @@ class ProfilePhotoAPIView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
-    @staticmethod
-    def post(request: Request) -> Response:
-        """
-        Cria ou substitui a foto de perfil do usuário autenticado
-        """
+    @inject
+    def post(
+        self,
+        request: Request,
+        profile_service: ProfileService = Provide[Container.profile_service],
+    ) -> Response:
         user = cast(User, request.user)
+        photo = request.FILES.get("photo")
+        if not photo:
+            return Response({"detail": "Nenhuma foto enviada."}, status=status.HTTP_400_BAD_REQUEST)
 
-        profile, _ = Profile.objects.get_or_create(user=user)
-
-        serializer = ProfilePhotoSerializer(profile, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        profile = profile_service.upload_photo(user, photo.name, photo.read())
 
         return Response(
             {
@@ -40,40 +42,40 @@ class ProfilePhotoAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
-    @staticmethod
-    def delete(request: Request) -> Response:
-        """
-        Remove a foto de perfil
-        """
-        try:
-            profile = request.user.profile  # type: ignore[union-attr]
-        except Profile.DoesNotExist:
-            return Response({"detail": "Perfil não encontrado."}, status=404)
-
-        if profile.photo:
-            profile.photo.delete(save=False)
-            profile.photo = None
-            profile.save()
-
-        return Response({"detail": "Foto de perfil removida."}, status=204)
+    @inject
+    def delete(
+        self,
+        request: Request,
+        profile_service: ProfileService = Provide[Container.profile_service],
+    ) -> Response:
+        user = cast(User, request.user)
+        profile_service.delete_photo(user)
+        return Response({"detail": "Foto de perfil removida."}, status=status.HTTP_204_NO_CONTENT)
 
 
 class MeProfileAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @staticmethod
-    def get_object(request: Request) -> Profile:
-        profile, _ = Profile.objects.get_or_create(user=cast(User, request.user))
-        return profile
-
-    def get(self, request: Request) -> Response:
-        profile = self.get_object(request)
+    @inject
+    def get(
+        self,
+        request: Request,
+        profile_service: ProfileService = Provide[Container.profile_service],
+    ) -> Response:
+        user = cast(User, request.user)
+        profile = profile_service.get_profile(user)
         serializer = ProfileSerializer(profile, context={"request": request})
         data = serializer.data
         return _not_modified_or_response(request, data, tag="PROFILE")
 
-    def patch(self, request: Request) -> Response:
-        profile = self.get_object(request)
+    @inject
+    def patch(
+        self,
+        request: Request,
+        profile_service: ProfileService = Provide[Container.profile_service],
+    ) -> Response:
+        user = cast(User, request.user)
+        profile = profile_service.get_profile(user)
         serializer = ProfileSerializer(
             profile,
             data=request.data,

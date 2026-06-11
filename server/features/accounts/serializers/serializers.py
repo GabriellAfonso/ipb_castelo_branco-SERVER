@@ -95,17 +95,6 @@ class TokenSerializer(serializers.Serializer[Any]):
     refresh = serializers.CharField(read_only=True)
 
 
-class ProfilePhotoSerializer(serializers.ModelSerializer[Profile]):
-    class Meta:
-        model = Profile
-        fields = ["photo"]
-
-    def update(self, instance: Profile, validated_data: Any) -> Profile:
-        if instance.photo and "photo" in validated_data:
-            instance.photo.delete(save=False)
-        return super().update(instance, validated_data)
-
-
 class ProfileSerializer(serializers.ModelSerializer[Profile]):
     photo_url = serializers.SerializerMethodField()
 

@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from features.gallery.models.gallery import Album, Photo
-from core.conftest import make_member_client, make_user, make_auth_client
+from conftest import make_member_client, make_user, make_auth_client
 
 
 PHOTOS_URL = "/api/photos/"

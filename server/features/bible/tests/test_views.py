@@ -1,40 +1,50 @@
-from collections.abc import Generator
-
-import pytest
 from rest_framework.test import APIClient
-from unittest.mock import patch
 
 BIBLE_LIST_URL = "/api/bible/"
 BIBLE_DETAIL_URL = "/api/bible/{name}/"
 
-SAMPLE_BIBLE = [{"abbrev": "Gn", "name": "Gênesis", "chapters": [["No princípio..."]]}]
-
-
-@pytest.fixture(autouse=True)
-def mock_bibles() -> Generator[None, None, None]:
-    with patch("features.bible.views.BIBLES", {"nvi": SAMPLE_BIBLE, "arc": SAMPLE_BIBLE}):
-        yield
-
 
 class TestBibleListView:
+    """Integration tests — run against real JSON files (ARA, NAA)."""
+
     def test_returns_200_without_auth(self) -> None:
         resp = APIClient().get(BIBLE_LIST_URL)
         assert resp.status_code == 200
 
     def test_returns_sorted_versions(self) -> None:
         resp = APIClient().get(BIBLE_LIST_URL)
-        assert resp.data == {"versions": ["arc", "nvi"]}
+        versions = resp.data["versions"]
+        assert versions == sorted(versions)
+        assert len(versions) >= 1
+
+    def test_response_has_versions_key(self) -> None:
+        resp = APIClient().get(BIBLE_LIST_URL)
+        assert "versions" in resp.data
 
 
 class TestBibleDetailView:
-    def test_returns_200_without_auth(self) -> None:
-        resp = APIClient().get(BIBLE_DETAIL_URL.format(name="nvi"))
+    """Integration tests — run against real JSON files."""
+
+    def test_returns_200_for_existing_version(self) -> None:
+        versions = APIClient().get(BIBLE_LIST_URL).data["versions"]
+        resp = APIClient().get(BIBLE_DETAIL_URL.format(name=versions[0]))
         assert resp.status_code == 200
 
-    def test_returns_bible_data(self) -> None:
-        resp = APIClient().get(BIBLE_DETAIL_URL.format(name="nvi"))
-        assert resp.data == SAMPLE_BIBLE
+    def test_returns_list_of_books(self) -> None:
+        versions = APIClient().get(BIBLE_LIST_URL).data["versions"]
+        resp = APIClient().get(BIBLE_DETAIL_URL.format(name=versions[0]))
+        assert isinstance(resp.data, list)
+        assert len(resp.data) > 0
+
+    def test_book_has_expected_fields(self) -> None:
+        versions = APIClient().get(BIBLE_LIST_URL).data["versions"]
+        resp = APIClient().get(BIBLE_DETAIL_URL.format(name=versions[0]))
+        book = resp.data[0]
+        assert "abbrev" in book
+        assert "name" in book
+        assert "chapters" in book
 
     def test_unknown_version_returns_404(self) -> None:
-        resp = APIClient().get(BIBLE_DETAIL_URL.format(name="unknown"))
+        resp = APIClient().get(BIBLE_DETAIL_URL.format(name="NONEXISTENT"))
         assert resp.status_code == 404
+        assert resp.data["detail"] == "Version not found."

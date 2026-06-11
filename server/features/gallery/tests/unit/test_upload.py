@@ -5,7 +5,7 @@ from django.test import Client
 from PIL import Image
 
 from features.gallery.models.gallery import Album, Photo
-from features.gallery.views.upload import MAX_FILE_SIZE, _is_valid_image
+from features.gallery.services.gallery_service import MAX_FILE_SIZE, _is_valid_image
 
 
 UPLOAD_URL = "/admin/gallery/album/upload/"

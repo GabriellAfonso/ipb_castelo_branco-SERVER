@@ -1,5 +1,6 @@
 from typing import Optional, Protocol
 
+from features.accounts.models.profile import Profile
 from features.accounts.models.user import User
 from core.application.dtos.auth_dtos import RegisterDTO
 from uuid import UUID
@@ -12,10 +13,48 @@ class UserRepository(Protocol):
         """Cria e retorna um usuário a partir de RegisterDTO."""
         ...
 
+    def create_google_user(
+        self, email: str, username: str, first_name: str, last_name: str
+    ) -> User:
+        """Cria usuário Google (senha inutilizável)."""
+        ...
+
     def get_by_id(self, user_id: UUID) -> Optional[User]:
         """Retorna usuário por id ou None."""
         ...
 
     def get_by_username(self, username: str) -> Optional[User]:
         """Retorna usuário por username ou None."""
+        ...
+
+    def get_by_email(self, email: str) -> Optional[User]:
+        """Retorna usuário por email ou None."""
+        ...
+
+    def username_exists(self, username: str) -> bool:
+        """Verifica se username já existe."""
+        ...
+
+    def generate_unique_username(self, base: str) -> str:
+        """Gera username único a partir de base, adicionando sufixo numérico se necessário."""
+        ...
+
+
+class ProfileRepository(Protocol):
+    """Contrato para operações de perfil."""
+
+    def get_or_create(self, user: User) -> tuple[Profile, bool]:
+        """Retorna (profile, created)."""
+        ...
+
+    def save_photo(self, profile: Profile, filename: str, content: bytes) -> None:
+        """Salva foto no perfil."""
+        ...
+
+    def delete_photo(self, profile: Profile) -> None:
+        """Remove foto do perfil."""
+        ...
+
+    def update(self, profile: Profile, **fields: object) -> Profile:
+        """Atualiza campos do perfil."""
         ...

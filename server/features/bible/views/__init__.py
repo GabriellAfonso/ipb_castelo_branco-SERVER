@@ -1,25 +1,43 @@
+from dependency_injector.wiring import Provide, inject
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from features.bible.loader import BIBLES
+from config.di import Container
+from core.domain.exceptions import BibleVersionNotFound
+from features.bible.services import BibleService
 
 
 class BibleListView(APIView):
     permission_classes = [AllowAny]
 
-    @staticmethod
-    def get(request: Request) -> Response:
-        return Response({"versions": sorted(BIBLES.keys())}, status=status.HTTP_200_OK)
+    @inject
+    def get(
+        self,
+        request: Request,
+        bible_service: BibleService = Provide[Container.bible_service],
+    ) -> Response:
+        versions = bible_service.list_versions()
+        return Response({"versions": versions}, status=status.HTTP_200_OK)
 
 
 class BibleDetailView(APIView):
     permission_classes = [AllowAny]
 
-    @staticmethod
-    def get(request: Request, name: str) -> Response:
-        if name not in BIBLES:
+    @inject
+    def get(
+        self,
+        request: Request,
+        name: str,
+        bible_service: BibleService = Provide[Container.bible_service],
+    ) -> Response:
+        try:
+            books = bible_service.get_version(name)
+        except BibleVersionNotFound:
             return Response({"detail": "Version not found."}, status=status.HTTP_404_NOT_FOUND)
-        return Response(BIBLES[name], status=status.HTTP_200_OK)
+        return Response(
+            [book.model_dump() for book in books],
+            status=status.HTTP_200_OK,
+        )

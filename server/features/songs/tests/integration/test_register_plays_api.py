@@ -2,7 +2,7 @@ import pytest
 from rest_framework.test import APIClient
 
 from features.songs.models import Song
-from core.conftest import make_admin_client, make_auth_client, make_user
+from conftest import make_admin_client, make_auth_client, make_user
 
 
 URL = "/api/played/register/"
