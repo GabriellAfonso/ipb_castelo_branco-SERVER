@@ -122,7 +122,7 @@ specs/                          # project root, outside server/
 
 ## 7. Project-Specific Notes
 
-- **Dependency injection via `dependency-injector`** — container is in `config/container.py`. When creating new services/repositories, register them there. Don't instantiate repositories directly in views.
+- **Dependency injection via `dependency-injector`** — container is in `config/di.py`. When creating new services/repositories, register them there. Don't instantiate repositories directly in views.
 - **DTOs via Pydantic** — services use Pydantic models (not plain dicts) for data transfer between layers. Follow this pattern when creating new use cases.
 - **Dual authentication** — JWT (SimpleJWT) + Google OAuth 2.0. Every protected view uses DRF's `IsAuthenticated`. Don't create authenticated endpoints outside this pattern.
 - **Base path `/ipbcb/`** — server runs behind nginx with this prefix. Never hardcode absolute URLs in code.
