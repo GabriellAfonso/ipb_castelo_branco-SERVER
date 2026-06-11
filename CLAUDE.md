@@ -118,6 +118,12 @@ specs/                          # project root, outside server/
 - Don't create refactoring specs — specs describe the destination, not the path
 - Don't repeat in the spec what's already in `constitution.md`
 
+### 6.5 Creating specs for existing code
+
+- Read the entire domain code before writing anything
+- spec.md describes what exists today — complete and accurate
+- tasks.md lists only what's missing or broken compared to spec
+- plan.md reflects decisions already made in the code, not hypothetical ones
 ---
 
 ## 7. Project-Specific Notes
