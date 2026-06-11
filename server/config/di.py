@@ -4,6 +4,6 @@ from features.accounts.repositories.user_repository import DjangoUserRepository
 
 
 class Container(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(packages=["features.accounts"])
+    wiring_config = containers.WiringConfiguration(packages=["features"])
 
     user_repository = providers.Factory(DjangoUserRepository)
