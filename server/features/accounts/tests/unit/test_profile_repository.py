@@ -40,6 +40,7 @@ def test_save_photo(repo: DjangoProfileRepository, user: User) -> None:
     repo.save_photo(profile, "test.jpg", b"fake-image-content")
     profile.refresh_from_db()
     assert profile.photo is not None
+    assert profile.photo.name is not None
     assert profile.photo.name.startswith("profiles/profuser/profile_picture")
 
 
