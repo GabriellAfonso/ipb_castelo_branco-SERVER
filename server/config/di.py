@@ -18,7 +18,18 @@ from features.songs.services.song_service import SongService
 
 
 class Container(containers.DeclarativeContainer):
-    wiring_config = containers.WiringConfiguration(packages=["features"])
+    wiring_config = containers.WiringConfiguration(
+        modules=[
+            "features.accounts.views.auth",
+            "features.accounts.views.profile",
+            "features.bible.views",
+            "features.gallery.views.gallery",
+            "features.gallery.views.upload",
+            "features.songs.views.hymnal",
+            "features.songs.views.register_plays",
+            "features.songs.views.songs",
+        ]
+    )
 
     user_repository = providers.Factory(DjangoUserRepository)
     profile_repository = providers.Factory(DjangoProfileRepository)
