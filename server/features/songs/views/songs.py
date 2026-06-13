@@ -1,31 +1,30 @@
-import random
 from collections import defaultdict
-from datetime import timedelta
 from typing import Any
 
-from django.db.models import Count
-from django.utils.timezone import now
-from rest_framework.generics import ListAPIView
+from dependency_injector.wiring import Provide, inject
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from features.songs.models.chord_chart import ChordChart
-from features.songs.models.lyrics import Lyrics
-from features.songs.models.song import Played, Song
+from config.di import Container
+from core.domain.exceptions import ValidationError
+from core.http.permissions import IsAdminUser
+from core.http.utils import _not_modified_or_response
 from features.songs.serializers.serializers import (
-    PlayedSerializer,
     ChordChartSerializer,
     LyricsSerializer,
+    PlayedSerializer,
 )
-from core.http.utils import _not_modified_or_response
+from features.songs.services.song_service import SongService
 
 
 def _parse_fixed_param(value: str) -> dict[int, int]:
-    """
-    Parses query param like: "1:12,3:45" -> {1: 12, 3: 45}
+    """Parse query param like: "1:12,3:45" -> {1: 12, 3: 45}.
     Invalid entries are ignored.
+
+    >>> _parse_fixed_param("1:12,3:45")
+    {1: 12, 3: 45}
     """
     fixed: dict[int, int] = {}
     if not value:
@@ -54,9 +53,13 @@ class SongsBySundayAPI(APIView):
     permission_classes = [AllowAny]
     serializer_class = PlayedSerializer
 
-    def get(self, request: Request) -> Response:
-        qs = Played.objects.select_related("song").order_by("-date", "position")
-
+    @inject
+    def get(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        qs = song_service.list_all_played()
         data = PlayedSerializer(qs, many=True).data
         grouped: dict[str, list[Any]] = defaultdict(list)
 
@@ -78,98 +81,61 @@ class SongsBySundayAPI(APIView):
 class TopSongsAPI(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response:
-        qs = (
-            Played.objects.values("song_id", "song__title")
-            .annotate(play_count=Count("song"))
-            .order_by("-play_count")
-        )
-        result = list(qs)
+    @inject
+    def get(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        result = song_service.top_songs()
         return _not_modified_or_response(request, result)
 
 
 class TopTonesAPI(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response:
-        qs = (
-            Played.objects.values("tone").annotate(tone_count=Count("tone")).order_by("-tone_count")
-        )
-        result = list(qs)
+    @inject
+    def get(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        result = song_service.top_tones()
         return _not_modified_or_response(request, result)
 
 
 class SuggestedSongsAPI(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response:
+    @inject
+    def get(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
         fixed_param = request.query_params.get("fixed", "")
         fixed_by_position = _parse_fixed_param(fixed_param)
-        suggested = self.get_suggested_songs(fixed_by_position)
-        return Response(suggested)
+        suggestions = song_service.suggest_songs(fixed_by_position)
 
-    def get_suggested_songs(self, fixed_by_position: dict[int, int] | None = None) -> list[Any]:
-        three_months_ago = now() - timedelta(days=90)
-        suggested: list[Any] = []
-        used_song_ids: set[int] = set()
+        result = []
+        for suggestion in suggestions:
+            data = PlayedSerializer(suggestion.played).data
+            data["position"] = suggestion.position
+            result.append(data)
 
-        fixed_by_position = fixed_by_position or {}
-
-        recent_songs = Played.objects.filter(date__gte=three_months_ago).values_list(
-            "song_id", flat=True
-        )
-
-        if fixed_by_position:
-            fixed_ids = list(set(fixed_by_position.values()))
-            fixed_playeds = Played.objects.select_related("song").filter(id__in=fixed_ids)
-            fixed_by_id = {p.id: p for p in fixed_playeds}
-
-            for position, played_id in fixed_by_position.items():
-                played_obj = fixed_by_id.get(played_id)
-                if not played_obj:
-                    continue
-
-                if played_obj.song_id is not None:
-                    used_song_ids.add(played_obj.song_id)
-
-                data = PlayedSerializer(played_obj).data
-                data["position"] = position
-                suggested.append(data)
-
-        for position in range(1, 5):
-            if position in fixed_by_position:
-                continue
-
-            qs = (
-                Played.objects.select_related("song")
-                .filter(position=position, date__lt=three_months_ago)
-                .exclude(song_id__in=recent_songs)
-                .exclude(song_id__in=used_song_ids)
-            )
-
-            if qs.exists():
-                chosen = random.choice(list(qs))  # nosec B311
-                if chosen.song_id is not None:
-                    used_song_ids.add(chosen.song_id)
-
-                data = PlayedSerializer(chosen).data
-                data["position"] = position
-                suggested.append(data)
-
-        suggested.sort(key=lambda x: x.get("position", 0))
-        return suggested
+        return Response(result)
 
 
 class AllSongsAPI(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response:
-        qs = (
-            Song.objects.select_related("category")
-            .order_by("title", "artist")
-            .values("id", "title", "artist", "category__name")
-        )
-
+    @inject
+    def get(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        qs = song_service.list_all_songs()
         data = [
             {
                 "id": row["id"],
@@ -177,18 +143,68 @@ class AllSongsAPI(APIView):
                 "artist": row["artist"],
                 "category": row["category__name"] or "",
             }
-            for row in qs
+            for row in qs.values("id", "title", "artist", "category__name")
         ]
         return _not_modified_or_response(request, data, tag="all-songs")
 
 
-class ChordChartListView(ListAPIView[ChordChart]):
+class ChordChartListAPI(APIView):
     permission_classes = [AllowAny]
-    serializer_class = ChordChartSerializer
-    queryset = ChordChart.objects.select_related("song").all()
+
+    @inject
+    def get(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        qs = song_service.list_chord_charts()
+        data = ChordChartSerializer(qs, many=True).data
+        return Response(data)
 
 
-class LyricsListView(ListAPIView[Lyrics]):
+class LyricsListAPI(APIView):
     permission_classes = [AllowAny]
-    serializer_class = LyricsSerializer
-    queryset = Lyrics.objects.select_related("song").all()
+
+    @inject
+    def get(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        qs = song_service.list_lyrics()
+        data = LyricsSerializer(qs, many=True).data
+        return Response(data)
+
+
+class ChordChartDetailAPI(APIView):
+    permission_classes = [IsAdminUser]
+
+    @inject
+    def patch(
+        self,
+        request: Request,
+        pk: int,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        content = request.data.get("content")
+        if content is None:
+            raise ValidationError("Field 'content' is required.")
+        chart = song_service.update_chord_chart_content(pk, content)
+        return Response(ChordChartSerializer(chart).data)
+
+
+class LyricsDetailAPI(APIView):
+    permission_classes = [IsAdminUser]
+
+    @inject
+    def patch(
+        self,
+        request: Request,
+        pk: int,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        content = request.data.get("content")
+        if content is None:
+            raise ValidationError("Field 'content' is required.")
+        lyrics = song_service.update_lyrics_content(pk, content)
+        return Response(LyricsSerializer(lyrics).data)

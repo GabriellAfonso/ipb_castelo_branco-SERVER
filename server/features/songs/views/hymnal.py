@@ -1,36 +1,23 @@
-from django.db.models import Func, IntegerField, Value
-from django.db.models.functions import Cast, NullIf
+from dependency_injector.wiring import Provide, inject
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from features.songs.models.hymnal import Hymn
+from config.di import Container
 from core.http.utils import _not_modified_or_response
+from features.songs.services.hymnal_service import HymnalService
 
 
-class hymnalAPI(APIView):
+class HymnalAPI(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response:
-        qs = (
-            Hymn.objects.annotate(
-                number_int=Cast(
-                    NullIf(
-                        Func(
-                            "number",
-                            Value("[^0-9].*"),
-                            Value(""),
-                            function="REGEXP_REPLACE",
-                        ),
-                        Value(""),
-                    ),
-                    IntegerField(),
-                )
-            )
-            .order_by("number_int", "number")
-            .values("number", "title", "lyrics")
-        )
-
-        result = list(qs)
+    @inject
+    def get(
+        self,
+        request: Request,
+        hymnal_service: HymnalService = Provide[Container.hymnal_service],
+    ) -> Response:
+        qs = hymnal_service.list_hymns()
+        result = list(qs.values("number", "title", "lyrics"))
         return _not_modified_or_response(request, result)

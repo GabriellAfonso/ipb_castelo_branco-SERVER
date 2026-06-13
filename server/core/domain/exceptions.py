@@ -57,3 +57,15 @@ class ProfileNotFoundError(NotFoundError):
     def __init__(self, user_id: str) -> None:
         super().__init__(f"Profile not found for user: '{user_id}'")
         self.user_id = user_id
+
+
+class ChordChartNotFoundError(NotFoundError):
+    def __init__(self, pk: int) -> None:
+        super().__init__(f"Chord chart not found: id={pk}")
+        self.pk = pk
+
+
+class LyricsNotFoundError(NotFoundError):
+    def __init__(self, pk: int) -> None:
+        super().__init__(f"Lyrics not found: id={pk}")
+        self.pk = pk

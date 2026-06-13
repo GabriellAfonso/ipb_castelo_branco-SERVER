@@ -1,25 +1,26 @@
 from datetime import datetime
 from typing import Any
 
-from django.db import transaction
+from dependency_injector.wiring import Provide, inject
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from config.di import Container
 from core.http.permissions import IsAdminUser
-from features.songs.models.song import Played, Song
+from features.songs.dtos import PlayInput
+from features.songs.services.register_plays_service import (
+    RegisterPlaysService,
+    SongsNotFoundError,
+)
 
 
-# TODO Resolver essa gambiarra
 class RegisterSundayPlaysAPI(APIView):
-    permission_classes = [IsAdminUser]
+    """POST: create Played records for a given date.
 
-    """
-    POST: cria registros em Played para uma data.
+    Requires: authenticated user with admin profile.
 
-    Requer: request.user autenticado e request.user.profile.is_admin == True
-
-    Payload esperado:
+    Expected payload:
     {
       "date": "2026-02-07",
       "plays": [
@@ -29,15 +30,21 @@ class RegisterSundayPlaysAPI(APIView):
     }
     """
 
-    @staticmethod
-    def post(request: Request) -> Response:
+    permission_classes = [IsAdminUser]
+
+    @inject
+    def post(
+        self,
+        request: Request,
+        register_service: RegisterPlaysService = Provide[Container.register_plays_service],
+    ) -> Response:
         payload = request.data or {}
         date_str = (payload.get("date") or "").strip()
-        plays = payload.get("plays")
+        plays_raw = payload.get("plays")
 
         if not date_str:
             return Response({"detail": "Missing field: date."}, status=400)
-        if not isinstance(plays, list) or not plays:
+        if not isinstance(plays_raw, list) or not plays_raw:
             return Response(
                 {"detail": "Missing/invalid field: plays (must be a non-empty list)."}, status=400
             )
@@ -47,10 +54,26 @@ class RegisterSundayPlaysAPI(APIView):
         except ValueError:
             return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
-        cleaned_items: list[dict[str, Any]] = []
-        song_ids: set[int] = set()
+        play_inputs = self._validate_play_items(plays_raw)
+        if isinstance(play_inputs, Response):
+            return play_inputs
 
-        for idx, item in enumerate(plays):
+        try:
+            created = register_service.register(date_value, play_inputs)
+        except SongsNotFoundError as e:
+            return Response(
+                {"detail": "Some songs were not found.", "missing_song_ids": e.missing_ids},
+                status=400,
+            )
+
+        return Response({"created": created}, status=201)
+
+    @staticmethod
+    def _validate_play_items(plays_raw: list[Any]) -> list[PlayInput] | Response:
+        """Parse and validate each play item from raw payload."""
+        result: list[PlayInput] = []
+
+        for idx, item in enumerate(plays_raw):
             if not isinstance(item, dict):
                 return Response({"detail": f"plays[{idx}] must be an object."}, status=400)
 
@@ -76,27 +99,6 @@ class RegisterSundayPlaysAPI(APIView):
                     {"detail": f"plays[{idx}] position must be between 1 and 10."}, status=400
                 )
 
-            cleaned_items.append({"song_id": song_id_int, "position": position_int, "tone": tone})
-            song_ids.add(song_id_int)
+            result.append(PlayInput(song_id=song_id_int, position=position_int, tone=tone))
 
-        songs_by_id = Song.objects.in_bulk(song_ids)
-        missing = [sid for sid in sorted(song_ids) if sid not in songs_by_id]
-        if missing:
-            return Response(
-                {"detail": "Some songs were not found.", "missing_song_ids": missing}, status=400
-            )
-
-        to_create: list[Played] = [
-            Played(
-                song=songs_by_id[item["song_id"]],
-                date=date_value,
-                tone=item["tone"],
-                position=item["position"],
-            )
-            for item in cleaned_items
-        ]
-
-        with transaction.atomic():
-            Played.objects.bulk_create(to_create)
-
-        return Response({"created": len(to_create)}, status=201)
+        return result
