@@ -11,4 +11,9 @@ class AccountsConfig(AppConfig):
 
         container = Container()
         container.init_resources()
-        container.wire(packages=["features.accounts"])
+        container.wire(
+            modules=[
+                "features.accounts.views.auth",
+                "features.accounts.views.profile",
+            ]
+        )
