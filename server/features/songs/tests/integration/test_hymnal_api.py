@@ -6,7 +6,7 @@ from features.songs.models import Hymn
 
 URL = "/api/hymnal/"
 
-# hymnalAPI uses REGEXP_REPLACE (PostgreSQL-only).
+# HymnalAPI uses REGEXP_REPLACE (PostgreSQL-only).
 # Tests marked skipif SQLite is the backend.
 requires_postgres = pytest.mark.skipif(
     "django.db.backends.sqlite3"
