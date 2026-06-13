@@ -31,6 +31,87 @@ class TestChordChartListView:
 
 
 @pytest.mark.django_db
+class TestChordChartCreateView:
+    def test_post_creates_chart(self, song: Song) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/chord-charts/",
+            {"song_id": song.pk, "content": "Am G C", "tone": "G", "instrument": "Violão"},
+            format="json",
+        )
+        assert resp.status_code == 201
+        assert resp.data["song_id"] == song.pk
+        assert resp.data["content"] == "Am G C"
+        assert resp.data["tone"] == "G"
+        assert resp.data["instrument"] == "Violão"
+        assert "id" in resp.data
+        assert "updated_at" in resp.data
+
+    def test_post_returns_400_missing_content(self, song: Song) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/chord-charts/",
+            {"song_id": song.pk, "tone": "G", "instrument": "Violão"},
+            format="json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_returns_400_missing_tone(self, song: Song) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/chord-charts/",
+            {"song_id": song.pk, "content": "Am G C", "instrument": "Violão"},
+            format="json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_returns_400_missing_instrument(self, song: Song) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/chord-charts/",
+            {"song_id": song.pk, "content": "Am G C", "tone": "G"},
+            format="json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_returns_400_nonexistent_song(self) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/chord-charts/",
+            {"song_id": 9999, "content": "Am G C", "tone": "G", "instrument": "Violão"},
+            format="json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_returns_400_missing_song_id(self) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/chord-charts/",
+            {"content": "Am G C", "tone": "G", "instrument": "Violão"},
+            format="json",
+        )
+        assert resp.status_code == 400
+
+    def test_post_returns_401_unauthenticated(self, song: Song) -> None:
+        resp = APIClient().post(
+            "/api/chord-charts/",
+            {"song_id": song.pk, "content": "Am G C", "tone": "G", "instrument": "Violão"},
+            format="json",
+        )
+        assert resp.status_code == 401
+
+    def test_post_returns_403_non_admin(self, song: Song) -> None:
+        user = make_user(username="regular_cc")
+        auth_client = make_auth_client(user)
+        resp = auth_client.post(
+            "/api/chord-charts/",
+            {"song_id": song.pk, "content": "Am G C", "tone": "G", "instrument": "Violão"},
+            format="json",
+        )
+        assert resp.status_code == 403
+
+
+@pytest.mark.django_db
 class TestChordChartDetailView:
     def test_patch_updates_content(self, song: Song) -> None:
         chart = ChordChart.objects.create(
@@ -90,6 +171,62 @@ class TestLyricsListView:
         resp = client.get("/api/lyrics/")
         assert resp.status_code == 200
         assert resp.data == []
+
+
+@pytest.mark.django_db
+class TestLyricsCreateView:
+    def test_post_creates_lyrics(self, song: Song) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/lyrics/",
+            {"song_id": song.pk, "content": "Amazing grace how sweet the sound"},
+            format="json",
+        )
+        assert resp.status_code == 201
+        assert resp.data["song_id"] == song.pk
+        assert resp.data["content"] == "Amazing grace how sweet the sound"
+        assert "id" in resp.data
+        assert "updated_at" in resp.data
+
+    def test_post_returns_400_missing_content(self, song: Song) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post("/api/lyrics/", {"song_id": song.pk}, format="json")
+        assert resp.status_code == 400
+
+    def test_post_returns_400_empty_content(self, song: Song) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post("/api/lyrics/", {"song_id": song.pk, "content": ""}, format="json")
+        assert resp.status_code == 400
+
+    def test_post_returns_400_nonexistent_song(self) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post(
+            "/api/lyrics/", {"song_id": 9999, "content": "Lyrics"}, format="json"
+        )
+        assert resp.status_code == 400
+
+    def test_post_returns_400_missing_song_id(self) -> None:
+        admin_client, _ = make_admin_client()
+        resp = admin_client.post("/api/lyrics/", {"content": "Lyrics"}, format="json")
+        assert resp.status_code == 400
+
+    def test_post_returns_401_unauthenticated(self, song: Song) -> None:
+        resp = APIClient().post(
+            "/api/lyrics/",
+            {"song_id": song.pk, "content": "Lyrics"},
+            format="json",
+        )
+        assert resp.status_code == 401
+
+    def test_post_returns_403_non_admin(self, song: Song) -> None:
+        user = make_user(username="regular_ly")
+        auth_client = make_auth_client(user)
+        resp = auth_client.post(
+            "/api/lyrics/",
+            {"song_id": song.pk, "content": "Lyrics"},
+            format="json",
+        )
+        assert resp.status_code == 403
 
 
 @pytest.mark.django_db

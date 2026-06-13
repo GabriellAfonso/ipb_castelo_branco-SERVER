@@ -5,7 +5,11 @@ from typing import Any, NamedTuple
 from django.db.models import QuerySet
 from django.utils.timezone import now
 
-from core.domain.exceptions import ChordChartNotFoundError, LyricsNotFoundError
+from core.domain.exceptions import (
+    ChordChartNotFoundError,
+    LyricsNotFoundError,
+    ValidationError,
+)
 from features.songs.models.chord_chart import ChordChart
 from features.songs.models.lyrics import Lyrics
 from features.songs.models.song import Played, Song
@@ -130,3 +134,39 @@ class SongService:
         lyrics.content = content
         self._repository.save_lyrics(lyrics, ["content", "updated_at"])
         return lyrics
+
+    def create_chord_chart(
+        self, song_id: int, content: str, tone: str, instrument: str
+    ) -> ChordChart:
+        """Create a new chord chart for a song.
+
+        >>> service.create_chord_chart(1, "{t:Amazing Grace}...", "G", "Violão")
+        <ChordChart: ...>
+        """
+        if not content or not content.strip():
+            raise ValidationError("Field 'content' is required.")
+        if not tone or not tone.strip():
+            raise ValidationError("Field 'tone' is required.")
+        if not instrument or not instrument.strip():
+            raise ValidationError("Field 'instrument' is required.")
+
+        song = self._repository.get_song_by_id(song_id)
+        if not song:
+            raise ValidationError(f"Song not found: id={song_id}")
+
+        return self._repository.create_chord_chart(song, content, tone, instrument)
+
+    def create_lyrics(self, song_id: int, content: str) -> Lyrics:
+        """Create lyrics for a song.
+
+        >>> service.create_lyrics(1, "Amazing grace, how sweet the sound")
+        <Lyrics: ...>
+        """
+        if not content or not content.strip():
+            raise ValidationError("Field 'content' is required.")
+
+        song = self._repository.get_song_by_id(song_id)
+        if not song:
+            raise ValidationError(f"Song not found: id={song_id}")
+
+        return self._repository.create_lyrics(song, content)

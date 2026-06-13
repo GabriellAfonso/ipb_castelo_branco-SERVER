@@ -149,7 +149,10 @@ class AllSongsAPI(APIView):
 
 
 class ChordChartListAPI(APIView):
-    permission_classes = [AllowAny]
+    def get_permissions(self) -> list[Any]:
+        if self.request.method == "POST":
+            return [IsAdminUser()]
+        return [AllowAny()]
 
     @inject
     def get(
@@ -161,9 +164,27 @@ class ChordChartListAPI(APIView):
         data = ChordChartSerializer(qs, many=True).data
         return Response(data)
 
+    @inject
+    def post(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        song_id = request.data.get("song_id")
+        if song_id is None:
+            raise ValidationError("Field 'song_id' is required.")
+        content = request.data.get("content", "")
+        tone = request.data.get("tone", "")
+        instrument = request.data.get("instrument", "")
+        chart = song_service.create_chord_chart(int(song_id), content, tone, instrument)
+        return Response(ChordChartSerializer(chart).data, status=201)
+
 
 class LyricsListAPI(APIView):
-    permission_classes = [AllowAny]
+    def get_permissions(self) -> list[Any]:
+        if self.request.method == "POST":
+            return [IsAdminUser()]
+        return [AllowAny()]
 
     @inject
     def get(
@@ -174,6 +195,19 @@ class LyricsListAPI(APIView):
         qs = song_service.list_lyrics()
         data = LyricsSerializer(qs, many=True).data
         return Response(data)
+
+    @inject
+    def post(
+        self,
+        request: Request,
+        song_service: SongService = Provide[Container.song_service],
+    ) -> Response:
+        song_id = request.data.get("song_id")
+        if song_id is None:
+            raise ValidationError("Field 'song_id' is required.")
+        content = request.data.get("content", "")
+        lyrics = song_service.create_lyrics(int(song_id), content)
+        return Response(LyricsSerializer(lyrics).data, status=201)
 
 
 class ChordChartDetailAPI(APIView):

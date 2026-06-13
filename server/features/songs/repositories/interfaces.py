@@ -47,6 +47,14 @@ class SongRepository(Protocol):
 
     def save_lyrics(self, lyrics: Lyrics, fields: list[str]) -> None: ...
 
+    def get_song_by_id(self, song_id: int) -> Song | None: ...
+
+    def create_chord_chart(
+        self, song: Song, content: str, tone: str, instrument: str
+    ) -> ChordChart: ...
+
+    def create_lyrics(self, song: Song, content: str) -> Lyrics: ...
+
 
 class HymnalRepository(Protocol):
     """Contract for hymnal persistence operations."""

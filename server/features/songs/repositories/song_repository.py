@@ -71,3 +71,16 @@ class DjangoSongRepository:
 
     def save_lyrics(self, lyrics: Lyrics, fields: list[str]) -> None:
         lyrics.save(update_fields=fields)
+
+    def get_song_by_id(self, song_id: int) -> Song | None:
+        return Song.objects.filter(pk=song_id).first()
+
+    def create_chord_chart(
+        self, song: Song, content: str, tone: str, instrument: str
+    ) -> ChordChart:
+        return ChordChart.objects.create(
+            song=song, content=content, tone=tone, instrument=instrument
+        )
+
+    def create_lyrics(self, song: Song, content: str) -> Lyrics:
+        return Lyrics.objects.create(song=song, content=content)

@@ -161,6 +161,15 @@ List all chord charts ordered alphabetically by song title.
 - **Response body**: array of `{ id, song_id, content, tone, instrument, updated_at }`
 - **Ordering**: song title (ascending)
 
+### POST /api/chord-charts/
+
+Create a new chord chart for a song.
+
+- **Auth**: IsAdminUser
+- **Request body**: `{ song_id, content, tone, instrument }` — all required
+- **Response**: `201` with `{ id, song_id, content, tone, instrument, updated_at }`
+- **Errors**: `400` if song_id not found, or any required field missing/empty
+
 ### GET /api/lyrics/
 
 List all lyrics ordered alphabetically by song title.
@@ -169,6 +178,15 @@ List all lyrics ordered alphabetically by song title.
 - **Response**: `200`
 - **Response body**: array of `{ id, song_id, content, updated_at }`
 - **Ordering**: song title (ascending)
+
+### POST /api/lyrics/
+
+Create lyrics for a song.
+
+- **Auth**: IsAdminUser
+- **Request body**: `{ song_id, content }` — all required
+- **Response**: `201` with `{ id, song_id, content, updated_at }`
+- **Errors**: `400` if song_id not found or content empty
 
 ---
 
