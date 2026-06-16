@@ -1,4 +1,3 @@
-from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.request import Request
@@ -6,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 from dependency_injector.wiring import inject, Provide
-from pydantic import ValidationError  # noqa
 
 from features.accounts.serializers.serializers import (
     GoogleLoginSerializer,
@@ -16,7 +14,6 @@ from features.accounts.serializers.serializers import (
 )
 from config.di import Container
 from core.application.dtos.auth_dtos import LoginDTO
-from core.domain.exceptions import InvalidCredentialsError
 from features.accounts.services.google_auth_service import GoogleAuthService
 from features.accounts.services.login_service import LoginService
 from features.accounts.services.register_service import RegisterService
@@ -53,22 +50,10 @@ class LoginAPI(APIView):
         request: Request,
         login_service: LoginService = Provide[Container.login_service],
     ) -> Response:
-        try:
-            login_dto = LoginDTO(**request.data)
-        except ValidationError:
-            return Response(
-                {"detail": _("Nome de usuário ou senha inválidos.")},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        try:
-            token_dto = login_service.login(login_dto)
-        except InvalidCredentialsError:
-            return Response(
-                {"detail": _("Nome de usuário ou senha inválidos.")},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
+        # Pydantic ValidationError and InvalidCredentialsError bubble up
+        # to custom_exception_handler
+        login_dto = LoginDTO(**request.data)
+        token_dto = login_service.login(login_dto)
         return Response(token_dto.model_dump(), status=status.HTTP_200_OK)
 
 

@@ -5,6 +5,7 @@ from unittest.mock import patch
 from django.db import IntegrityError
 from django.utils import timezone
 
+from core.domain.exceptions import ScheduleOverwriteError
 from features.schedule.services.monthly_scheduler import (
     generate_monthly_schedule_preview,
     save_monthly_schedule,
@@ -304,7 +305,7 @@ def test_save_raises_after_30_minutes() -> None:
         created_at=timezone.now() - timedelta(minutes=31)
     )
 
-    with pytest.raises(ValueError, match="30 minutos"):
+    with pytest.raises(ScheduleOverwriteError, match="30 minutos"):
         save_monthly_schedule(2026, 5, items)
 
 

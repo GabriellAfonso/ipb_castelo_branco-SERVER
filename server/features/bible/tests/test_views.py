@@ -47,4 +47,5 @@ class TestBibleDetailView:
     def test_unknown_version_returns_404(self) -> None:
         resp = APIClient().get(BIBLE_DETAIL_URL.format(name="NONEXISTENT"))
         assert resp.status_code == 404
-        assert resp.data["detail"] == "Version not found."
+        assert resp.data["error_code"] == "NOT_FOUND"
+        assert "not found" in resp.data["detail"].lower()

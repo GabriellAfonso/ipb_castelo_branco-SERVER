@@ -7,6 +7,7 @@ from typing import Any
 from django.db import transaction
 from django.utils import timezone
 
+from core.domain.exceptions import ScheduleOverwriteError
 from features.schedule.models.schedule import (
     ScheduleType,
     MemberScheduleConfig,
@@ -156,10 +157,7 @@ def save_monthly_schedule(year: int, month: int, items: list[dict[str, Any]]) ->
 
         if existing_first:
             if timezone.now() > existing_first.created_at + timedelta(minutes=30):
-                raise ValueError(
-                    f"A escala de {month:02d}/{year} foi criada há mais de 30 minutos. "
-                    "Por segurança, não é mais possível sobrescrevê-la."
-                )
+                raise ScheduleOverwriteError(month, year)
 
             MonthlySchedule.objects.filter(year=year, month=month).delete()
 

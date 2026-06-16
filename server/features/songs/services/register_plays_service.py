@@ -2,18 +2,10 @@ from datetime import date
 
 from django.db import transaction
 
-from core.domain.exceptions import NotFoundError
+from core.domain.exceptions import SongsNotFoundError
 from features.songs.dtos import PlayInput
 from features.songs.models.song import Played
 from features.songs.repositories.interfaces import SongRepository
-
-
-class SongsNotFoundError(NotFoundError):
-    """Raised when one or more songs are not found."""
-
-    def __init__(self, missing_ids: list[int]) -> None:
-        super().__init__(f"Some songs were not found: {missing_ids}")
-        self.missing_ids = missing_ids
 
 
 class RegisterPlaysService:

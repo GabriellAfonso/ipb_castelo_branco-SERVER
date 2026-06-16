@@ -85,7 +85,8 @@ class TestRegisterSundayPlaysValidation:
             {"date": "2026-03-15", "plays": [{"song_id": 99999, "position": 1, "tone": "G"}]},
             format="json",
         )
-        assert resp.status_code == 400
+        assert resp.status_code == 404
+        assert resp.data["error_code"] == "NOT_FOUND"
         assert "not found" in resp.data["detail"].lower()
 
 

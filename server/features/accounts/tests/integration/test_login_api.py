@@ -59,6 +59,7 @@ def test_login_inactive_user_returns_401() -> None:
 @pytest.mark.django_db
 def test_login_missing_fields_returns_401() -> None:
     client = APIClient()
-    # LoginDTO raises pydantic.ValidationError → LoginAPI returns 401
+    # LoginDTO raises pydantic.ValidationError → handler returns 400 VALIDATION_ERROR
     response = client.post(LOGIN_URL, {}, format="json")
-    assert response.status_code == 401
+    assert response.status_code == 400
+    assert response.data["error_code"] == "VALIDATION_ERROR"

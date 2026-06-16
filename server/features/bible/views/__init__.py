@@ -6,7 +6,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from config.di import Container
-from core.domain.exceptions import BibleVersionNotFound
 from features.bible.services import BibleService
 
 
@@ -33,10 +32,8 @@ class BibleDetailView(APIView):
         name: str,
         bible_service: BibleService = Provide[Container.bible_service],
     ) -> Response:
-        try:
-            books = bible_service.get_version(name)
-        except BibleVersionNotFound:
-            return Response({"detail": "Version not found."}, status=status.HTTP_404_NOT_FOUND)
+        # BibleVersionNotFound bubbles up to custom_exception_handler
+        books = bible_service.get_version(name)
         return Response(
             [book.model_dump() for book in books],
             status=status.HTTP_200_OK,

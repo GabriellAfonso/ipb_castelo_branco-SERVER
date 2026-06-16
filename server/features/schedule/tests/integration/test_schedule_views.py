@@ -270,10 +270,11 @@ class TestMonthlyScheduleSaveAPI:
         assert resp.status_code == 200
         assert MonthlySchedule.objects.filter(year=2026, month=5).count() == 1
 
-    def test_missing_year_returns_500(self) -> None:
+    def test_missing_year_returns_400(self) -> None:
         client, _ = make_admin_client()
         resp = client.post(self.ENDPOINT, {"month": 5, "items": []}, format="json")
-        assert resp.status_code == 500
+        assert resp.status_code == 400
+        assert resp.data["error_code"] == "VALIDATION_ERROR"
 
     def test_save_after_30_minutes_returns_400(self) -> None:
         st = make_schedule_type()
@@ -302,7 +303,8 @@ class TestMonthlyScheduleSaveAPI:
         )
 
         assert resp.status_code == 400
-        assert "30 minutos" in resp.data["error"]
+        assert resp.data["error_code"] == "VALIDATION_ERROR"
+        assert "30 minutos" in resp.data["detail"]
 
     def test_empty_items_clears_nothing(self) -> None:
         client, _ = make_admin_client()

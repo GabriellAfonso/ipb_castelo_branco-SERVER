@@ -1,4 +1,3 @@
-import logging
 from collections import defaultdict
 from datetime import date
 from typing import Any
@@ -15,8 +14,6 @@ from features.schedule.services.monthly_scheduler import (
     generate_monthly_schedule_preview,
     save_monthly_schedule,
 )
-
-logger = logging.getLogger(__name__)
 
 
 def _group_monthly_schedule_qs(schedules: QuerySet[MonthlySchedule]) -> dict[str, Any]:
@@ -114,33 +111,51 @@ class MonthlyScheduleSaveAPI(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request: Request) -> Response:
+        # ValidationError and ScheduleOverwriteError bubble up to custom_exception_handler
+        year, month, normalized = _parse_schedule_save_payload(request.data)
+        save_monthly_schedule(year=year, month=month, items=normalized)
+        return Response({"ok": True}, status=200)
+
+
+def _parse_schedule_save_payload(
+    data: dict[str, Any],
+) -> tuple[int, int, list[dict[str, Any]]]:
+    """Extract and validate schedule save payload.
+
+    Raises ``ValidationError`` on invalid input.
+    """
+    from core.domain.exceptions import ValidationError
+
+    raw_year = data.get("year")
+    raw_month = data.get("month")
+
+    if raw_year is None or raw_month is None:
+        raise ValidationError("Fields 'year' and 'month' are required.")
+
+    try:
+        year = int(raw_year)
+        month = int(raw_month)
+    except (TypeError, ValueError):
+        raise ValidationError("Fields 'year' and 'month' must be integers.")
+
+    items = data.get("items", []) or []
+
+    normalized: list[dict[str, Any]] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        if "schedule_type_id" in it and "member_id" in it:
+            normalized.append(it)
+            continue
         try:
-            year = int(request.data["year"])
-            month = int(request.data["month"])
-            items = request.data.get("items", []) or []
+            normalized.append(
+                {
+                    "date": it["date"],
+                    "schedule_type_id": it["schedule_type"]["id"],
+                    "member_id": it["member"]["id"],
+                }
+            )
+        except (KeyError, TypeError):
+            continue
 
-            normalized: list[dict[str, Any]] = []
-            for it in items:
-                if "schedule_type_id" in it and "member_id" in it:
-                    normalized.append(it)
-                    continue
-                try:
-                    normalized.append(
-                        {
-                            "date": it["date"],
-                            "schedule_type_id": it["schedule_type"]["id"],
-                            "member_id": it["member"]["id"],
-                        }
-                    )
-                except (KeyError, TypeError):
-                    continue
-
-            save_monthly_schedule(year=year, month=month, items=normalized)
-            return Response({"ok": True}, status=200)
-
-        except ValueError as e:
-            return Response({"error": str(e)}, status=400)
-
-        except Exception as e:
-            logger.exception("Failed to save monthly schedule: %s", e)
-            return Response({"error": "Erro interno ao salvar escala."}, status=500)
+    return year, month, normalized
