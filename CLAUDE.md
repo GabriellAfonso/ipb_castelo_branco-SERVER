@@ -178,5 +178,5 @@ specs/                          # project root, outside server/
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/001-api-error-handling/plan.md`
+at `specs/002-structured-json-logging/plan.md`
 <!-- SPECKIT END -->
