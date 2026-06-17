@@ -60,6 +60,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.http.middleware.RequestLoggingMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -153,3 +154,40 @@ STATIC_ROOT = BASE_DIR / "static"
 
 MEDIA_URL = "/ipbcb/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {
+        "request_id": {
+            "()": "core.logging.context.RequestIdFilter",
+        },
+    },
+    "formatters": {
+        "json": {
+            "()": "pythonjsonlogger.json.JsonFormatter",
+            "fmt": "%(timestamp)s %(level)s %(name)s %(message)s",
+            "rename_fields": {"levelname": "level", "name": "logger"},
+            "timestamp": True,
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stdout",
+            "formatter": "json",
+            "filters": ["request_id"],
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.request": {"level": "WARNING"},
+        "django.server": {"level": "WARNING"},
+        "django.db.backends": {"level": "WARNING"},
+    },
+}
