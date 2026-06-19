@@ -46,8 +46,35 @@ services:
     networks:
       - proxy-network
 
+  prometheus:
+    container_name: ipbcb-prometheus-prod
+    image: prom/prometheus:v3.4.2
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ipbcb_prometheus_data:/prometheus
+    restart: unless-stopped
+    networks:
+      - proxy-network
+
+  grafana:
+    container_name: ipbcb-grafana-prod
+    image: grafana/grafana:11.6.0
+    env_file:
+      - ./.env
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ipbcb_grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - proxy-network
+
 volumes:
   ipbcb_postgres_data:
+  ipbcb_prometheus_data:
+  ipbcb_grafana_data:
 
 networks:
   proxy-network:

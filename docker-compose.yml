@@ -33,5 +33,32 @@ services:
       timeout: 5s
       retries: 5
 
+  prometheus:
+    container_name: ipbcb-prometheus-dev
+    image: prom/prometheus:v3.4.2
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ipbcb_prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - ipbcb_server
+
+  grafana:
+    container_name: ipbcb-grafana-dev
+    image: grafana/grafana:11.6.0
+    env_file:
+      - ./.env
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ipbcb_grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+
 volumes:
   ipbcb_postgres_data_dev:
+  ipbcb_prometheus_data:
+  ipbcb_grafana_data:
