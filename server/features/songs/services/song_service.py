@@ -10,6 +10,7 @@ from core.domain.exceptions import (
     LyricsNotFoundError,
     ValidationError,
 )
+from core.metrics import CHORD_CHART_VIEWS_COUNTER, LYRICS_VIEWS_COUNTER
 from features.songs.models.chord_chart import ChordChart
 from features.songs.models.lyrics import Lyrics
 from features.songs.models.song import Played, Song
@@ -104,6 +105,7 @@ class SongService:
         return random.choice(list(qs))  # nosec B311
 
     def list_chord_charts(self) -> QuerySet[ChordChart]:
+        CHORD_CHART_VIEWS_COUNTER.inc()
         return self._repository.list_all_chord_charts()
 
     def update_chord_chart_content(self, pk: int, content: str) -> ChordChart:
@@ -120,6 +122,7 @@ class SongService:
         return chart
 
     def list_lyrics(self) -> QuerySet[Lyrics]:
+        LYRICS_VIEWS_COUNTER.inc()
         return self._repository.list_all_lyrics()
 
     def update_lyrics_content(self, pk: int, content: str) -> Lyrics:

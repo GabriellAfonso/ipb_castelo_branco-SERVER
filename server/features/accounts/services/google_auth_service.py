@@ -12,6 +12,7 @@ from core.domain.exceptions import (
     InvalidGoogleTokenError,
     UnverifiedGoogleEmailError,
 )
+from core.metrics import LOGIN_COUNTER
 from features.accounts.auth.jwt import get_tokens_for_user
 from features.accounts.models.user import User
 from features.accounts.repositories.interfaces import ProfileRepository, UserRepository
@@ -27,9 +28,14 @@ class GoogleAuthService:
         self._profile_repo = profile_repository
 
     def authenticate_google(self, token: str) -> TokenDTO:
-        google_user = self._verify_token(token)
-        user = self._get_or_create_user(google_user)
+        try:
+            google_user = self._verify_token(token)
+            user = self._get_or_create_user(google_user)
+        except Exception:
+            LOGIN_COUNTER.labels(result="failure", login_type="google").inc()
+            raise
         self._sync_profile_photo(user, google_user.picture_url)
+        LOGIN_COUNTER.labels(result="success", login_type="google").inc()
         return get_tokens_for_user(user)
 
     def _verify_token(self, token: str) -> GoogleUserDTO:

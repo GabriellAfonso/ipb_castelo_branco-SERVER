@@ -8,6 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from core.domain.exceptions import ScheduleOverwriteError
+from core.metrics import SCHEDULE_GENERATED_COUNTER, SCHEDULE_SAVED_COUNTER
 from features.schedule.models.schedule import (
     ScheduleType,
     MemberScheduleConfig,
@@ -146,6 +147,7 @@ def generate_monthly_schedule_preview(
             )
 
     suggested.sort(key=lambda x: (x["schedule_type"]["name"], x["date"]))
+    SCHEDULE_GENERATED_COUNTER.inc()
     return {"year": year, "month": month, "items": suggested}
 
 
@@ -176,6 +178,8 @@ def save_monthly_schedule(year: int, month: int, items: list[dict[str, Any]]) ->
             )
 
         MonthlySchedule.objects.bulk_create(to_create)
+
+    SCHEDULE_SAVED_COUNTER.inc()
 
 
 # Backward-compatible name (now returns preview, does NOT write to DB)

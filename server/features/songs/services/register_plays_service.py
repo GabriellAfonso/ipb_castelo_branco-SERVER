@@ -3,6 +3,7 @@ from datetime import date
 from django.db import transaction
 
 from core.domain.exceptions import SongsNotFoundError
+from core.metrics import SONG_PLAYS_REGISTERED_COUNTER
 from features.songs.dtos import PlayInput
 from features.songs.models.song import Played
 from features.songs.repositories.interfaces import SongRepository
@@ -38,4 +39,5 @@ class RegisterPlaysService:
         with transaction.atomic():
             self._repository.bulk_create_played(to_create)
 
+        SONG_PLAYS_REGISTERED_COUNTER.inc()
         return len(to_create)
