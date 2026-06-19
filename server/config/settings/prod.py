@@ -5,6 +5,17 @@ from __future__ import annotations
 import os
 from config.settings.base import *  # noqa: F403
 
+# ─── Sentry — error tracking (only if DSN is configured) ────────────────────
+_sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if _sentry_dsn:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+    )
+
 FORCE_SCRIPT_NAME = "/ipbcb"
 USE_X_FORWARDED_HOST = True
 
