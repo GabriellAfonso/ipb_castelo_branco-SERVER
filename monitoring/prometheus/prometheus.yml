@@ -6,4 +6,4 @@ scrape_configs:
   - job_name: "django"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["ipbcb_server:8000"]
+      - targets: ["ipbcb-server-prod:8000"]
