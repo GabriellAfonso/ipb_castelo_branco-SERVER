@@ -35,6 +35,8 @@ class Member(models.Model):
     ]
 
     name = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=255, blank=True, default="")
+    last_name = models.CharField(max_length=255, blank=True, default="")
     birth_date = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES, null=True, blank=True)
 
