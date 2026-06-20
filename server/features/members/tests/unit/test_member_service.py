@@ -15,8 +15,8 @@ class FakeMemberRepository:
 class TestMemberService:
     def test_list_birthdays_by_month_delegates_to_repository(self) -> None:
         expected = [
-            BirthdayDTO(name="Alice", birth_day=5),
-            BirthdayDTO(name="Bob", birth_day=23),
+            BirthdayDTO(name="Alice", gender="F", birth_day=5),
+            BirthdayDTO(name="Bob", gender="M", birth_day=23),
         ]
         repo = FakeMemberRepository(expected)
         service = MemberService(repository=repo)

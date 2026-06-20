@@ -20,7 +20,7 @@ A church member wants to see who has birthdays in a given month so they can plan
 
 **Acceptance Scenarios**:
 
-1. **Given** members exist with birth dates in July, **When** an authenticated member user requests `GET /ipbcb/members/birthdays/?month=7`, **Then** the response contains those members' names and birth days (day of month only), ordered by day ascending.
+1. **Given** members exist with birth dates in July, **When** an authenticated member user requests `GET /ipbcb/members/birthdays/?month=7`, **Then** the response contains those members' names, genders, and birth days (day of month only), ordered by day ascending.
 2. **Given** no members have birth dates in February, **When** an authenticated member user requests `GET /ipbcb/members/birthdays/?month=2`, **Then** the response is an empty list with a 200 status.
 3. **Given** multiple members share the same birth day in a month, **When** the list is requested, **Then** all members for that day appear in the results.
 
@@ -55,7 +55,7 @@ A user sends a request with an invalid or missing month parameter and receives a
 
 - **FR-001**: System MUST provide a `GET /ipbcb/members/birthdays/` endpoint that returns members with birthdays in the specified month.
 - **FR-002**: System MUST require a `month` query parameter with an integer value between 1 and 12.
-- **FR-003**: System MUST return each matching member's name and birth day (day of month only, not the full date).
+- **FR-003**: System MUST return each matching member's name, gender, and birth day (day of month only, not the full date).
 - **FR-004**: System MUST order results by birth day ascending.
 - **FR-005**: System MUST restrict access to users with `IsMemberUser` permission.
 - **FR-006**: System MUST return a 400 error when the `month` parameter is missing, non-numeric, or outside the 1-12 range.
@@ -77,6 +77,6 @@ A user sends a request with an invalid or missing month parameter and receives a
 ## Assumptions
 
 - The existing `birth_date` field on the Member model stores a full date (year, month, day); only month and day are relevant for this feature.
-- The response includes the member's name (using existing name fields on the Member model) and the day of month as an integer.
+- The response includes the member's name (using existing name fields on the Member model), gender (`"M"`, `"F"`, or `null`), and the day of month as an integer.
 - No year-based filtering is needed; birthdays repeat annually.
 - The endpoint is read-only (GET); no write operations are involved.

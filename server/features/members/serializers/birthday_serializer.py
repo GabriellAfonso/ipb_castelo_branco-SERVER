@@ -9,4 +9,5 @@ class BirthdayQueryParamSerializer(serializers.Serializer[Any]):
 
 class BirthdayResponseSerializer(serializers.Serializer[Any]):
     name = serializers.CharField()
+    gender = serializers.CharField(allow_null=True)
     birth_day = serializers.IntegerField()

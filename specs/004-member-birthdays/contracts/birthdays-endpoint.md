@@ -27,14 +27,17 @@ Required. JWT Bearer token.
   "birthdays": [
     {
       "name": "Alice Johnson",
+      "gender": "F",
       "birth_day": 5
     },
     {
       "name": "Bob Smith",
+      "gender": "M",
       "birth_day": 18
     },
     {
       "name": "Carol Davis",
+      "gender": null,
       "birth_day": 23
     }
   ]

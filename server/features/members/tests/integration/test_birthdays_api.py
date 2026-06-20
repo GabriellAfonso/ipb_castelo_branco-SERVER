@@ -15,8 +15,8 @@ class TestMemberBirthdaysAPIView:
     # --- US1: View birthdays by month ---
 
     def test_member_returns_birthdays_for_month(self) -> None:
-        Member.objects.create(name="Alice", birth_date=date(1990, 7, 5), is_active=True)
-        Member.objects.create(name="Bob", birth_date=date(1985, 7, 23), is_active=True)
+        Member.objects.create(name="Alice", birth_date=date(1990, 7, 5), gender="F", is_active=True)
+        Member.objects.create(name="Bob", birth_date=date(1985, 7, 23), gender="M", is_active=True)
         Member.objects.create(name="Carol", birth_date=date(1992, 8, 10), is_active=True)
         client, _ = make_member_client()
 
@@ -26,8 +26,10 @@ class TestMemberBirthdaysAPIView:
         birthdays = resp.data["birthdays"]
         assert len(birthdays) == 2
         assert birthdays[0]["name"] == "Alice"
+        assert birthdays[0]["gender"] == "F"
         assert birthdays[0]["birth_day"] == 5
         assert birthdays[1]["name"] == "Bob"
+        assert birthdays[1]["gender"] == "M"
         assert birthdays[1]["birth_day"] == 23
 
     def test_empty_month_returns_empty_list(self) -> None:
@@ -38,6 +40,17 @@ class TestMemberBirthdaysAPIView:
 
         assert resp.status_code == 200
         assert resp.data["birthdays"] == []
+
+    def test_null_gender_returned_as_null(self) -> None:
+        Member.objects.create(
+            name="NoGender", birth_date=date(1990, 7, 5), gender=None, is_active=True
+        )
+        client, _ = make_member_client()
+
+        resp = client.get(ENDPOINT, {"month": 7})
+
+        assert resp.status_code == 200
+        assert resp.data["birthdays"][0]["gender"] is None
 
     def test_excludes_null_birth_date(self) -> None:
         Member.objects.create(name="Alice", birth_date=date(1990, 7, 5), is_active=True)
