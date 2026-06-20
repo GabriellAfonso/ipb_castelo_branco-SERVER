@@ -10,6 +10,8 @@ from features.bible.repositories import JsonFileBibleRepository
 from features.bible.services import BibleService
 from features.gallery.repositories.gallery_repository import DjangoGalleryRepository
 from features.gallery.services.gallery_service import GalleryService
+from features.members.repositories.member_repository import DjangoMemberRepository
+from features.members.services.member_service import MemberService
 from features.songs.repositories.hymnal_repository import DjangoHymnalRepository
 from features.songs.repositories.song_repository import DjangoSongRepository
 from features.songs.services.hymnal_service import HymnalService
@@ -28,6 +30,7 @@ class Container(containers.DeclarativeContainer):
             "features.songs.views.hymnal",
             "features.songs.views.register_plays",
             "features.songs.views.songs",
+            "features.members.views.birthdays",
         ]
     )
 
@@ -55,3 +58,6 @@ class Container(containers.DeclarativeContainer):
     song_service = providers.Factory(SongService, repository=song_repository)
     register_plays_service = providers.Factory(RegisterPlaysService, repository=song_repository)
     hymnal_service = providers.Factory(HymnalService, repository=hymnal_repository)
+
+    member_repository = providers.Factory(DjangoMemberRepository)
+    member_service = providers.Factory(MemberService, repository=member_repository)
