@@ -15,7 +15,7 @@ class DjangoHymnalRepository:
         >>> repo.list_all_hymns()
         [{'number': '1', 'title': 'First', 'lyrics': [...]}, ...]
         """
-        return list(
+        qs = (
             Hymn.objects.annotate(
                 number_int=Cast(
                     NullIf(
@@ -33,3 +33,4 @@ class DjangoHymnalRepository:
             .order_by("number_int", "number")
             .values("number", "title", "lyrics")
         )
+        return [dict(row) for row in qs]
