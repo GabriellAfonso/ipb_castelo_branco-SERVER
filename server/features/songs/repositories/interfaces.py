@@ -4,7 +4,6 @@ from typing import Any, Protocol
 from django.db.models import QuerySet
 
 from features.songs.models.chord_chart import ChordChart
-from features.songs.models.hymnal import Hymn
 from features.songs.models.lyrics import Lyrics
 from features.songs.models.song import Played, Song
 
@@ -59,4 +58,4 @@ class SongRepository(Protocol):
 class HymnalRepository(Protocol):
     """Contract for hymnal persistence operations."""
 
-    def list_all_hymns(self) -> QuerySet[Hymn]: ...
+    def list_all_hymns(self) -> list[dict[str, Any]]: ...

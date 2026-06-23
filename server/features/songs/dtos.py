@@ -7,6 +7,23 @@ from core.application.dtos.strict_base import StrictBaseModel
 from core.domain.exceptions import ValidationError
 
 
+class SundaySongDTO(StrictBaseModel):
+    """Single song entry within a Sunday set."""
+
+    song_id: int
+    position: int
+    song: str
+    artist: str
+    tone: str
+
+
+class SundaySetDTO(StrictBaseModel):
+    """A Sunday service with its songs."""
+
+    date: str
+    songs: list[SundaySongDTO]
+
+
 class PlayInput(StrictBaseModel):
     """Single play entry for registering Sunday plays."""
 

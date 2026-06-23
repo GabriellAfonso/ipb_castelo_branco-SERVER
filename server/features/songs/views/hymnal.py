@@ -18,6 +18,5 @@ class HymnalAPI(APIView):
         request: Request,
         hymnal_service: HymnalService = Provide[Container.hymnal_service],
     ) -> Response:
-        qs = hymnal_service.list_hymns()
-        result = list(qs.values("number", "title", "lyrics"))
+        result = hymnal_service.list_hymns()
         return _not_modified_or_response(request, result)

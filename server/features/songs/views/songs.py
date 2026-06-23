@@ -1,4 +1,3 @@
-from collections import defaultdict
 from typing import Any
 
 from dependency_injector.wiring import Provide, inject
@@ -15,6 +14,7 @@ from features.songs.serializers.serializers import (
     ChordChartSerializer,
     LyricsSerializer,
     PlayedSerializer,
+    SongSerializer,
 )
 from features.songs.services.song_service import SongService
 
@@ -51,7 +51,6 @@ def _parse_fixed_param(value: str) -> dict[int, int]:
 
 class SongsBySundayAPI(APIView):
     permission_classes = [AllowAny]
-    serializer_class = PlayedSerializer
 
     @inject
     def get(
@@ -59,23 +58,11 @@ class SongsBySundayAPI(APIView):
         request: Request,
         song_service: SongService = Provide[Container.song_service],
     ) -> Response:
-        qs = song_service.list_all_played()
-        data = PlayedSerializer(qs, many=True).data
-        grouped: dict[str, list[Any]] = defaultdict(list)
-
-        for item in data:
-            grouped[item["date"]].append(
-                {
-                    "song_id": item["song"]["id"],
-                    "position": item["position"],
-                    "song": item["song"]["title"],
-                    "artist": item["song"]["artist"],
-                    "tone": item["tone"],
-                }
-            )
-
-        result = [{"date": day, "songs": songs} for day, songs in grouped.items()]
-        return _not_modified_or_response(request, result)
+        result = song_service.list_played_by_sunday()
+        return _not_modified_or_response(
+            request,
+            [s.model_dump() for s in result],
+        )
 
 
 class TopSongsAPI(APIView):
@@ -136,15 +123,7 @@ class AllSongsAPI(APIView):
         song_service: SongService = Provide[Container.song_service],
     ) -> Response:
         qs = song_service.list_all_songs()
-        data = [
-            {
-                "id": row["id"],
-                "title": row["title"],
-                "artist": row["artist"],
-                "category": row["category__name"] or "",
-            }
-            for row in qs.values("id", "title", "artist", "category__name")
-        ]
+        data = SongSerializer(qs, many=True).data
         return _not_modified_or_response(request, data, tag="all-songs")
 
 

@@ -1,4 +1,5 @@
 import random
+from collections import defaultdict
 from datetime import date, timedelta
 from typing import Any, NamedTuple
 
@@ -11,6 +12,7 @@ from core.domain.exceptions import (
     ValidationError,
 )
 from core.metrics import CHORD_CHART_VIEWS_COUNTER, LYRICS_VIEWS_COUNTER
+from features.songs.dtos import SundaySetDTO, SundaySongDTO
 from features.songs.models.chord_chart import ChordChart
 from features.songs.models.lyrics import Lyrics
 from features.songs.models.song import Played, Song
@@ -31,6 +33,28 @@ class SongService:
 
     def list_all_played(self) -> QuerySet[Played]:
         return self._repository.list_all_played()
+
+    def list_played_by_sunday(self) -> list[SundaySetDTO]:
+        """Return played songs grouped by Sunday date.
+
+        >>> service.list_played_by_sunday()
+        [SundaySetDTO(date='15/03/2026', songs=[...])]
+        """
+        grouped: dict[str, list[SundaySongDTO]] = defaultdict(list)
+
+        for played in self._repository.list_all_played():
+            date_str = played.date.strftime("%d/%m/%Y")
+            grouped[date_str].append(
+                SundaySongDTO(
+                    song_id=played.song_id or 0,
+                    position=played.position,
+                    song=played.song.title if played.song else "",
+                    artist=played.song.artist if played.song else "",
+                    tone=played.tone,
+                )
+            )
+
+        return [SundaySetDTO(date=day, songs=songs) for day, songs in grouped.items()]
 
     def top_songs(self) -> list[dict[str, Any]]:
         return self._repository.top_songs()

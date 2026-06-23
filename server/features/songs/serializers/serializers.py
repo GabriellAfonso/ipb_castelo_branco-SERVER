@@ -6,9 +6,11 @@ from features.songs.models.lyrics import Lyrics
 
 
 class SongSerializer(serializers.ModelSerializer[Song]):
+    category = serializers.CharField(source="category.name", default="")
+
     class Meta:
         model = Song
-        fields = ["id", "title", "artist", "youtube_link"]
+        fields = ["id", "title", "artist", "category", "youtube_link"]
 
 
 class PlayedSerializer(serializers.ModelSerializer[Played]):
