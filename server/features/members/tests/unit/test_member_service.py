@@ -1,4 +1,4 @@
-from features.members.dtos import BirthdayDTO
+from features.members.dtos import BirthdayDTO, MemberDTO
 from features.members.services.member_service import MemberService
 
 
@@ -6,6 +6,9 @@ class FakeMemberRepository:
     def __init__(self, birthdays: list[BirthdayDTO]) -> None:
         self._birthdays = birthdays
         self.last_month: int | None = None
+
+    def list_active_members(self) -> list[MemberDTO]:
+        return []
 
     def list_birthdays_by_month(self, month: int) -> list[BirthdayDTO]:
         self.last_month = month

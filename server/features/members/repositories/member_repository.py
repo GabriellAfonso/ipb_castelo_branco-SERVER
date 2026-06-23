@@ -1,11 +1,20 @@
 from django.db.models.functions import ExtractDay
 
-from features.members.dtos import BirthdayDTO
+from features.members.dtos import BirthdayDTO, MemberDTO
 from features.members.models.member import Member
 
 
 class DjangoMemberRepository:
     """Member repository using Django ORM."""
+
+    def list_active_members(self) -> list[MemberDTO]:
+        """Return all active members ordered by name.
+
+        >>> repo.list_active_members()
+        [MemberDTO(id=1, name='Alice'), ...]
+        """
+        qs = Member.objects.filter(is_active=True).order_by("name").values_list("id", "name")
+        return [MemberDTO(id=pk, name=name) for pk, name in qs]
 
     def list_birthdays_by_month(self, month: int) -> list[BirthdayDTO]:
         """Return active members born in the given month, ordered by day.
