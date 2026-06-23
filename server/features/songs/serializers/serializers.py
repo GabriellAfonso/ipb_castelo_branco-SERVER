@@ -8,7 +8,7 @@ from features.songs.models.lyrics import Lyrics
 class SongSerializer(serializers.ModelSerializer[Song]):
     class Meta:
         model = Song
-        fields = ["id", "title", "artist"]
+        fields = ["id", "title", "artist", "youtube_link"]
 
 
 class PlayedSerializer(serializers.ModelSerializer[Played]):
