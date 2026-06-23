@@ -1,57 +1,28 @@
-from collections import defaultdict
 from datetime import date
 from typing import Any
 
-from django.db.models import QuerySet
+from dependency_injector.wiring import Provide, inject
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from config.di import Container
+from core.domain.exceptions import ValidationError
 from core.http.permissions import IsAdminUser, IsMemberUser
 from core.http.utils import _not_modified_or_response
-from features.schedule.models.schedule import MonthlySchedule
-from features.schedule.services.monthly_scheduler import (
-    generate_monthly_schedule_preview,
-    save_monthly_schedule,
-)
-
-
-def _group_monthly_schedule_qs(schedules: QuerySet[MonthlySchedule]) -> dict[str, Any]:
-    grouped: dict[str, Any] = defaultdict(lambda: {"time": None, "items": []})
-
-    for s in schedules:
-        key = s.schedule_type.name
-        grouped[key]["time"] = s.schedule_type.time.strftime("%H:%M")
-        grouped[key]["items"].append(
-            {
-                "date": s.date.isoformat(),
-                "day": s.date.day,
-                "member": {"id": s.member_id, "name": s.member.name},
-                "schedule_type": {"id": s.schedule_type_id, "name": s.schedule_type.name},
-            }
-        )
-
-    return grouped
+from features.schedule.services.schedule_service import ScheduleService
 
 
 class CurrentMonthlyScheduleAPI(APIView):
     permission_classes = [IsMemberUser]
 
     @staticmethod
-    def get(request: Request) -> Response:
-        today = date.today()
-
-        schedules = (
-            MonthlySchedule.objects.filter(year=today.year, month=today.month)
-            .select_related("member", "schedule_type")
-            .order_by("schedule_type__name", "date")
-        )
-
-        result = {
-            "year": today.year,
-            "month": today.month,
-            "schedule": _group_monthly_schedule_qs(schedules),
-        }
+    @inject
+    def get(
+        request: Request,
+        schedule_service: ScheduleService = Provide[Container.schedule_service],
+    ) -> Response:
+        result = schedule_service.get_current_month_schedule(date.today())
         return _not_modified_or_response(request, result, status_code=200)
 
 
@@ -72,7 +43,12 @@ class MonthlySchedulePreviewAPI(APIView):
 
     permission_classes = [IsAdminUser]
 
-    def post(self, request: Request) -> Response:
+    @inject
+    def post(
+        self,
+        request: Request,
+        schedule_service: ScheduleService = Provide[Container.schedule_service],
+    ) -> Response:
         year = request.data.get("year")
         month = request.data.get("month")
         fixed_list = request.data.get("fixed", []) or []
@@ -87,7 +63,7 @@ class MonthlySchedulePreviewAPI(APIView):
                 continue
             fixed_map[(schedule_type_id, d)] = member_id
 
-        preview = generate_monthly_schedule_preview(
+        preview = schedule_service.generate_preview(
             year=int(year) if year is not None else None,
             month=int(month) if month is not None else None,
             fixed=fixed_map,
@@ -110,10 +86,15 @@ class MonthlyScheduleSaveAPI(APIView):
 
     permission_classes = [IsAdminUser]
 
-    def post(self, request: Request) -> Response:
+    @inject
+    def post(
+        self,
+        request: Request,
+        schedule_service: ScheduleService = Provide[Container.schedule_service],
+    ) -> Response:
         # ValidationError and ScheduleOverwriteError bubble up to custom_exception_handler
         year, month, normalized = _parse_schedule_save_payload(request.data)
-        save_monthly_schedule(year=year, month=month, items=normalized)
+        schedule_service.save_schedule(year=year, month=month, items=normalized)
         return Response({"ok": True}, status=200)
 
 
@@ -124,8 +105,6 @@ def _parse_schedule_save_payload(
 
     Raises ``ValidationError`` on invalid input.
     """
-    from core.domain.exceptions import ValidationError
-
     raw_year = data.get("year")
     raw_month = data.get("month")
 

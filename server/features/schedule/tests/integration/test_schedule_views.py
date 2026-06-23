@@ -138,7 +138,7 @@ class TestMonthlySchedulePreviewAPI:
         client, _ = make_admin_client()
 
         real_date = date
-        with patch("features.schedule.services.monthly_scheduler.date") as mock_date:
+        with patch("features.schedule.services.schedule_service.date") as mock_date:
             mock_date.today.return_value = real_date(2026, 4, 15)
             mock_date.side_effect = lambda *a, **kw: real_date(*a, **kw)
 

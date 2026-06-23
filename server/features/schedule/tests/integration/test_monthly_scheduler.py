@@ -6,15 +6,17 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from core.domain.exceptions import ScheduleOverwriteError
-from features.schedule.services.monthly_scheduler import (
-    generate_monthly_schedule_preview,
-    save_monthly_schedule,
-)
+from features.schedule.repositories.schedule_repository import DjangoScheduleRepository
+from features.schedule.services.schedule_service import ScheduleService
 from features.members.models.member import Member
 from features.schedule.models.schedule import MemberScheduleConfig, MonthlySchedule, ScheduleType
 
 
 # --- Helpers ---
+
+
+def _make_service() -> ScheduleService:
+    return ScheduleService(DjangoScheduleRepository())
 
 
 def make_schedule_type(
@@ -53,7 +55,7 @@ def _make_save_items(
     ]
 
 
-# --- generate_monthly_schedule_preview: structure ---
+# --- generate_preview: structure ---
 
 
 @pytest.mark.django_db
@@ -61,8 +63,9 @@ def test_preview_returns_correct_year_and_month() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     make_config(m, st)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert result["year"] == 2026
     assert result["month"] == 5
@@ -72,11 +75,12 @@ def test_preview_returns_correct_year_and_month() -> None:
 def test_preview_defaults_to_next_month() -> None:
     real_date = date
 
-    with patch("features.schedule.services.monthly_scheduler.date") as mock_date:
+    with patch("features.schedule.services.schedule_service.date") as mock_date:
         mock_date.today.return_value = real_date(2026, 4, 15)
         mock_date.side_effect = lambda *a, **kw: real_date(*a, **kw)
 
-        result = generate_monthly_schedule_preview()
+        service = _make_service()
+        result = service.generate_preview()
 
     assert result["year"] == 2026
     assert result["month"] == 5
@@ -84,7 +88,8 @@ def test_preview_defaults_to_next_month() -> None:
 
 @pytest.mark.django_db
 def test_preview_returns_items_list() -> None:
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    service = _make_service()
+    result = service.generate_preview(year=2026, month=5)
     assert isinstance(result["items"], list)
 
 
@@ -93,8 +98,9 @@ def test_preview_items_have_required_keys() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     make_config(m, st)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     for item in result["items"]:
         assert isinstance(item["date"], str)
@@ -109,8 +115,9 @@ def test_preview_all_dates_in_requested_month() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     make_config(m, st)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     for item in result["items"]:
         d = date.fromisoformat(item["date"])
@@ -118,7 +125,7 @@ def test_preview_all_dates_in_requested_month() -> None:
         assert d.month == 5
 
 
-# --- generate_monthly_schedule_preview: filtering/skips ---
+# --- generate_preview: filtering/skips ---
 
 
 @pytest.mark.django_db
@@ -127,8 +134,9 @@ def test_preview_skips_weekday_not_in_map() -> None:
     st = make_schedule_type(weekday=2)
     m = make_member()
     make_config(m, st)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert result["items"] == []
 
@@ -138,13 +146,14 @@ def test_preview_skips_schedule_type_with_no_available_configs() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     make_config(m, st, available=False)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert result["items"] == []
 
 
-# --- generate_monthly_schedule_preview: ordering and format ---
+# --- generate_preview: ordering and format ---
 
 
 @pytest.mark.django_db
@@ -155,8 +164,9 @@ def test_preview_items_sorted_by_name_then_date() -> None:
     m2 = make_member("M2")
     make_config(m1, st_a, weight=5)
     make_config(m2, st_b, weight=5)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     names = [item["schedule_type"]["name"] for item in result["items"]]
     assert names == sorted(names)
@@ -167,35 +177,38 @@ def test_preview_schedule_type_time_formatted_hh_mm() -> None:
     st = make_schedule_type(weekday=1, time_str="09:00")
     m = make_member()
     make_config(m, st)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert result["items"][0]["schedule_type"]["time"] == "09:00"
 
 
-# --- generate_monthly_schedule_preview: selection algorithm ---
+# --- generate_preview: selection algorithm ---
 
 
 @pytest.mark.django_db
 def test_preview_weight_limits_assignments_per_member() -> None:
-    # 1 member, weight=1, May 2026 has 5 Sundays → only 1 assignment (pool exhausts)
+    # 1 member, weight=1, May 2026 has 5 Sundays -> only 1 assignment (pool exhausts)
     st = make_schedule_type(weekday=1)
     m = make_member()
     make_config(m, st, weight=1)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert len(result["items"]) == 1
 
 
 @pytest.mark.django_db
 def test_preview_weight_controls_max_appearances() -> None:
-    # 1 member, weight=3 → 3 appearances
+    # 1 member, weight=3 -> 3 appearances
     st = make_schedule_type(weekday=1)
     m = make_member()
     make_config(m, st, weight=3)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert len(result["items"]) == 3
 
@@ -206,8 +219,9 @@ def test_preview_five_members_cover_five_sundays() -> None:
     members = [make_member(f"Member{i}") for i in range(5)]
     for m in members:
         make_config(m, st, weight=1)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert len(result["items"]) == 5
     assigned_ids = {item["member"]["id"] for item in result["items"]}
@@ -222,11 +236,10 @@ def test_preview_fixed_assignment_respected() -> None:
     m2 = make_member("M2")
     make_config(m1, st, weight=5)
     make_config(m2, st, weight=5)
+    service = _make_service()
 
     fixed_date = date(2026, 5, 3)
-    result = generate_monthly_schedule_preview(
-        year=2026, month=5, fixed={(st.id, fixed_date): m2.id}
-    )
+    result = service.generate_preview(year=2026, month=5, fixed={(st.id, fixed_date): m2.id})
 
     fixed_items = [i for i in result["items"] if i["date"] == fixed_date.isoformat()]
     assert len(fixed_items) == 1
@@ -240,9 +253,10 @@ def test_preview_fixed_non_configured_member_skipped() -> None:
     m_configured = make_member("Configured")
     m_not_configured = make_member("NotConfigured")
     make_config(m_configured, st, weight=5)
+    service = _make_service()
 
     fixed_date = date(2026, 5, 3)
-    result = generate_monthly_schedule_preview(
+    result = service.generate_preview(
         year=2026, month=5, fixed={(st.id, fixed_date): m_not_configured.id}
     )
 
@@ -257,13 +271,14 @@ def test_preview_non_fixed_items_have_fixed_false() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     make_config(m, st, weight=5)
+    service = _make_service()
 
-    result = generate_monthly_schedule_preview(year=2026, month=5)
+    result = service.generate_preview(year=2026, month=5)
 
     assert all(item["fixed"] is False for item in result["items"])
 
 
-# --- save_monthly_schedule ---
+# --- save_schedule ---
 
 
 @pytest.mark.django_db
@@ -271,8 +286,9 @@ def test_save_creates_records_in_db() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     items = _make_save_items(st, m, [date(2026, 5, 3), date(2026, 5, 10)])
+    service = _make_service()
 
-    save_monthly_schedule(2026, 5, items)
+    service.save_schedule(2026, 5, items)
 
     assert MonthlySchedule.objects.filter(year=2026, month=5).count() == 2
 
@@ -282,12 +298,13 @@ def test_save_replaces_within_30_minutes() -> None:
     st = make_schedule_type(weekday=1)
     m1 = make_member("V1")
     m2 = make_member("V2")
+    service = _make_service()
 
     items_v1 = _make_save_items(st, m1, [date(2026, 5, 3)])
-    save_monthly_schedule(2026, 5, items_v1)
+    service.save_schedule(2026, 5, items_v1)
 
     items_v2 = _make_save_items(st, m2, [date(2026, 5, 3), date(2026, 5, 10)])
-    save_monthly_schedule(2026, 5, items_v2)
+    service.save_schedule(2026, 5, items_v2)
 
     records = list(MonthlySchedule.objects.filter(year=2026, month=5))
     assert len(records) == 2
@@ -299,14 +316,16 @@ def test_save_raises_after_30_minutes() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     items = _make_save_items(st, m, [date(2026, 5, 3)])
-    save_monthly_schedule(2026, 5, items)
+    service = _make_service()
+
+    service.save_schedule(2026, 5, items)
 
     MonthlySchedule.objects.filter(year=2026, month=5).update(
         created_at=timezone.now() - timedelta(minutes=31)
     )
 
     with pytest.raises(ScheduleOverwriteError, match="30 minutos"):
-        save_monthly_schedule(2026, 5, items)
+        service.save_schedule(2026, 5, items)
 
 
 @pytest.mark.django_db
@@ -314,16 +333,18 @@ def test_save_boundary_at_exactly_30_minutes() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     items = _make_save_items(st, m, [date(2026, 5, 3)])
-    save_monthly_schedule(2026, 5, items)
+    service = _make_service()
+
+    service.save_schedule(2026, 5, items)
 
     # Set created_at to (now - 30min + 10s) so the check `now > created_at + 30min`
-    # evaluates as `now > now + 10s` → False, confirming operator is >, not >=.
+    # evaluates as `now > now + 10s` -> False, confirming operator is >, not >=.
     MonthlySchedule.objects.filter(year=2026, month=5).update(
         created_at=timezone.now() - timedelta(minutes=30) + timedelta(seconds=10)
     )
 
     # Should NOT raise (still within 30-minute window)
-    save_monthly_schedule(2026, 5, items)
+    service.save_schedule(2026, 5, items)
 
 
 @pytest.mark.django_db
@@ -331,8 +352,9 @@ def test_save_first_time_always_succeeds() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     items = _make_save_items(st, m, [date(2026, 5, 3)])
+    service = _make_service()
 
-    save_monthly_schedule(2026, 5, items)
+    service.save_schedule(2026, 5, items)
 
     assert MonthlySchedule.objects.filter(year=2026, month=5).count() == 1
 
@@ -341,21 +363,23 @@ def test_save_first_time_always_succeeds() -> None:
 def test_save_rolls_back_on_constraint_violation() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
-    # Two items with the same (schedule_type, date) → violates unique_together
+    # Two items with the same (schedule_type, date) -> violates unique_together
     items = [
         {"date": "2026-05-03", "schedule_type_id": st.id, "member_id": m.id},
         {"date": "2026-05-03", "schedule_type_id": st.id, "member_id": m.id},
     ]
+    service = _make_service()
 
     with pytest.raises(IntegrityError):
-        save_monthly_schedule(2026, 5, items)
+        service.save_schedule(2026, 5, items)
 
     assert MonthlySchedule.objects.filter(year=2026, month=5).count() == 0
 
 
 @pytest.mark.django_db
 def test_save_empty_items_creates_no_records() -> None:
-    save_monthly_schedule(2026, 5, [])
+    service = _make_service()
+    service.save_schedule(2026, 5, [])
 
     assert MonthlySchedule.objects.filter(year=2026, month=5).count() == 0
 
@@ -365,8 +389,9 @@ def test_save_sets_year_month_on_records() -> None:
     st = make_schedule_type(weekday=1)
     m = make_member()
     items = _make_save_items(st, m, [date(2026, 5, 3)])
+    service = _make_service()
 
-    save_monthly_schedule(2026, 5, items)
+    service.save_schedule(2026, 5, items)
 
     record = MonthlySchedule.objects.get(year=2026, month=5)
     assert record.year == 2026

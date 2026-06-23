@@ -16,6 +16,8 @@ from features.songs.repositories.hymnal_repository import DjangoHymnalRepository
 from features.songs.repositories.song_repository import DjangoSongRepository
 from features.songs.services.hymnal_service import HymnalService
 from features.songs.services.register_plays_service import RegisterPlaysService
+from features.schedule.repositories.schedule_repository import DjangoScheduleRepository
+from features.schedule.services.schedule_service import ScheduleService
 from features.songs.services.song_service import SongService
 
 
@@ -31,6 +33,8 @@ class Container(containers.DeclarativeContainer):
             "features.songs.views.register_plays",
             "features.songs.views.songs",
             "features.members.views.birthdays",
+            "features.members.views.members",
+            "features.schedule.views.schedule",
         ]
     )
 
@@ -61,3 +65,6 @@ class Container(containers.DeclarativeContainer):
 
     member_repository = providers.Factory(DjangoMemberRepository)
     member_service = providers.Factory(MemberService, repository=member_repository)
+
+    schedule_repository = providers.Factory(DjangoScheduleRepository)
+    schedule_service = providers.Factory(ScheduleService, repository=schedule_repository)
