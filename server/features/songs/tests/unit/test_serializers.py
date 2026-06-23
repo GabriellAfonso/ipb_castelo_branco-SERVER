@@ -15,7 +15,7 @@ class TestSongSerializer:
     def test_fields(self) -> None:
         song = Song.objects.create(title="Grace", artist="Artist")
         data = SongSerializer(song).data
-        assert set(data.keys()) == {"id", "title", "artist"}
+        assert set(data.keys()) == {"id", "title", "artist", "youtube_link"}
         assert data["title"] == "Grace"
 
 
