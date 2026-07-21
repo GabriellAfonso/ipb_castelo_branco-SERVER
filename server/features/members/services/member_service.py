@@ -14,10 +14,10 @@ class MemberService:
         """
         return self._repository.list_active_members()
 
-    def list_birthdays_by_month(self, month: int) -> list[BirthdayDTO]:
-        """Return members with birthdays in the given month.
+    def list_birthdays_by_month_range(self, start_month: int, end_month: int) -> list[BirthdayDTO]:
+        """Return members with birthdays in the given month range.
 
-        >>> service.list_birthdays_by_month(7)
-        [BirthdayDTO(name='Alice', birth_day=5), ...]
+        >>> service.list_birthdays_by_month_range(1, 6)
+        [BirthdayDTO(name='Alice', birth_month=1, birth_day=5), ...]
         """
-        return self._repository.list_birthdays_by_month(month)
+        return self._repository.list_birthdays_by_month_range(start_month, end_month)

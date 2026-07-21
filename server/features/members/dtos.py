@@ -9,4 +9,5 @@ class MemberDTO(BaseModel):
 class BirthdayDTO(BaseModel):
     name: str
     gender: str | None
+    birth_month: int
     birth_day: int

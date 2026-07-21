@@ -27,8 +27,8 @@ class MemberBirthdaysAPIView(APIView):
         if not param_serializer.is_valid():
             return Response(param_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        month = param_serializer.validated_data["month"]
-        birthdays = member_service.list_birthdays_by_month(month)
+        start_month, end_month = param_serializer.validated_data["month"]
+        birthdays = member_service.list_birthdays_by_month_range(start_month, end_month)
 
         serializer = BirthdayResponseSerializer([b.model_dump() for b in birthdays], many=True)
         return Response({"birthdays": serializer.data}, status=status.HTTP_200_OK)
