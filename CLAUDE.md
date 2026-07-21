@@ -178,5 +178,5 @@ specs/                          # project root, outside server/
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at `specs/004-member-birthdays/plan.md`
+at `specs/005-birthday-month-range/plan.md`
 <!-- SPECKIT END -->
