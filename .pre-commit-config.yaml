@@ -17,7 +17,10 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: bash -c 'cd server && /workspace/backend/wsl_venv/bin/python -m mypy .'
+        # Resolves python from PATH, so it uses whichever virtualenv is active.
+        # Do not hard-code an interpreter path here: the previous absolute path to
+        # a WSL venv broke every commit made from Windows.
+        entry: bash -c 'cd server && python -m mypy .'
         language: system
         types: [python]
         pass_filenames: false
