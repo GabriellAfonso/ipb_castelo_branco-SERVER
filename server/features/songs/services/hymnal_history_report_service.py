@@ -11,10 +11,10 @@ from features.songs.hymnal_history_dtos import (
     TopHymnDTO,
 )
 from features.songs.repositories.interfaces import HymnalHistoryRepository
+from features.songs.hymn_numbering import hymn_sort_key
 from features.songs.services.hymnal_history_occurrences import (
     collapse_events,
     group_events,
-    hymn_sort_key,
 )
 
 # Keeps "fetch the range into memory" an honest promise (research R-04).

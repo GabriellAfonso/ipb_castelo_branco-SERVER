@@ -14,11 +14,11 @@ from features.songs.hymnal_history_dtos import (
 )
 from core.models import ChurchService
 from core.domain.weekday import from_python_weekday
+from features.songs.hymn_numbering import hymn_sort_key
 from features.songs.services.hymnal_history_occurrences import (
     bucket_label,
     collapse_events,
     group_events,
-    hymn_sort_key,
     match_window,
 )
 

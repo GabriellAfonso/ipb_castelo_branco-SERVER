@@ -6,21 +6,12 @@ from features.songs.models import Hymn
 
 URL = "/api/hymnal/"
 
-# HymnalAPI uses REGEXP_REPLACE (PostgreSQL-only).
-# Tests marked skipif SQLite is the backend.
-requires_postgres = pytest.mark.skipif(
-    "django.db.backends.sqlite3"
-    in __import__("django").conf.settings.DATABASES["default"]["ENGINE"],
-    reason="REGEXP_REPLACE requires PostgreSQL",
-)
-
 
 @pytest.fixture
 def client() -> APIClient:
     return APIClient()
 
 
-@requires_postgres
 @pytest.mark.django_db
 class TestHymnalAPI:
     def test_returns_hymns(self, client: APIClient) -> None:

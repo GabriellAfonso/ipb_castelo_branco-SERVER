@@ -24,6 +24,7 @@ from features.songs.hymnal_history_dtos import (
 )
 from core.domain.weekday import from_python_weekday
 from core.models import ChurchService
+from features.songs.hymn_numbering import hymn_sort_key
 
 # (hymn_id, service_window_id or None, local date)
 OccurrenceKey = tuple[int, int | None, date]
@@ -93,20 +94,6 @@ def bucket_label(occurred_on: date, window_id: int | None, group_by: str) -> str
     # GROUP_BY_SERVICE
     suffix = str(window_id) if window_id is not None else NO_WINDOW_BUCKET_SUFFIX
     return f"{occurred_on.isoformat()}:{suffix}"
-
-
-def hymn_sort_key(number: str) -> tuple[int, str]:
-    """Sort hymn numbers numerically, tolerating alphanumeric suffixes like '110-A'.
-
-    >>> hymn_sort_key("110-A")
-    (110, '110-A')
-    """
-    digits = ""
-    for char in number:
-        if not char.isdigit():
-            break
-        digits += char
-    return (int(digits) if digits else 0, number)
 
 
 def group_events(
