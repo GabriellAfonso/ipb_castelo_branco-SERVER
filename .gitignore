@@ -42,6 +42,12 @@ server/db.sqlite3
 server/static/
 media/
 
+# ─── Dumps de banco ───────────────────────────────────────────────────────────
+# Backups de produção contêm dados pessoais de membros. Nunca versionar.
+*.sql
+*.sql.gz
+*.dump
+
 # ─── Dados / Fixtures locais ──────────────────────────────────────────────────
 igreja.json
 hinos_completos.json
