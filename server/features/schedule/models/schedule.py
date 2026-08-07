@@ -3,19 +3,19 @@ from typing import Any
 from django.db import models
 from django.utils import timezone
 
+from core.models import ChurchService
 
-class ScheduleType(models.Model):
-    name = models.CharField(max_length=100)
-    weekday = models.PositiveSmallIntegerField()
-    time = models.TimeField()
-
-    def __str__(self) -> str:
-        return f"{self.name} - {self.id}"
+# The `schedule_type` field names below point at ChurchService, which reads oddly on
+# purpose. They surface directly as `schedule_type_id` in the rota preview and save
+# payloads that the Android app sends and receives, so renaming them would change the
+# wire format. See specs/007-unify-service-catalogue/research.md R-07.
 
 
 class MemberScheduleConfig(models.Model):
     member = models.ForeignKey("members.Member", on_delete=models.CASCADE)
-    schedule_type = models.ForeignKey(ScheduleType, on_delete=models.CASCADE)
+    # PROTECT so a service can never be deleted out from under its configuration.
+    # Deactivate the service instead; see specs/007-unify-service-catalogue/research.md R-01.
+    schedule_type = models.ForeignKey(ChurchService, on_delete=models.PROTECT)
     available = models.BooleanField(default=True)
     weight = models.PositiveIntegerField(default=1)
 
@@ -31,7 +31,10 @@ class MonthlySchedule(models.Model):
     month = models.PositiveSmallIntegerField(editable=False)
 
     date = models.DateField()
-    schedule_type = models.ForeignKey(ScheduleType, on_delete=models.CASCADE)
+    # PROTECT, not CASCADE: rota rows are a record of what actually happened. Deleting a
+    # service must never erase months of history — and once the service catalogue is shared
+    # (feature 007), that deletion is reachable from an admin endpoint. See research.md R-01.
+    schedule_type = models.ForeignKey(ChurchService, on_delete=models.PROTECT)
     member = models.ForeignKey("members.Member", on_delete=models.PROTECT)
     created_at = models.DateTimeField(default=timezone.now, editable=False)
 

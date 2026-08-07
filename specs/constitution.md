@@ -14,6 +14,10 @@ Rules that no domain can break. These apply globally across the entire system.
 
 ## Architecture
 - Features never import from each other directly — use `core/` or signals
+- `core/` may contain models, but **only entities genuinely shared by two or more features**.
+  If exactly one feature uses it, it belongs to that feature. Without this boundary `core`
+  becomes a dumping ground. `core` became an installed Django app in feature 007, when the
+  church service catalogue was needed by both `schedule` and `songs`.
 - Views never access repositories — only services
 - Services never import HTTP objects (`request`, `HttpResponse`)
 - Repositories are the only layer that touches the ORM

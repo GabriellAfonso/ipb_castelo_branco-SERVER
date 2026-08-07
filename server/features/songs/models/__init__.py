@@ -5,5 +5,4 @@ from .lyrics import Lyrics as Lyrics
 from .hymnal_history import (
     HymnalHistorySettings as HymnalHistorySettings,
     HymnalViewEvent as HymnalViewEvent,
-    ServiceWindow as ServiceWindow,
 )

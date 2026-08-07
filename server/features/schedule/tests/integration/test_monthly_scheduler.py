@@ -9,7 +9,8 @@ from core.domain.exceptions import ScheduleOverwriteError
 from features.schedule.repositories.schedule_repository import DjangoScheduleRepository
 from features.schedule.services.schedule_service import ScheduleService
 from features.members.models.member import Member
-from features.schedule.models.schedule import MemberScheduleConfig, MonthlySchedule, ScheduleType
+from core.models import ChurchService
+from features.schedule.models.schedule import MemberScheduleConfig, MonthlySchedule
 
 
 # --- Helpers ---
@@ -21,9 +22,15 @@ def _make_service() -> ScheduleService:
 
 def make_schedule_type(
     name: str = "Culto", weekday: int = 1, time_str: str = "09:00"
-) -> ScheduleType:
+) -> ChurchService:
     h, m = map(int, time_str.split(":"))
-    return ScheduleType.objects.create(name=name, weekday=weekday, time=time(h, m))
+    # weekday is 1 = Sunday ... 7 = Saturday, matching core.domain.weekday.
+    return ChurchService.objects.create(
+        name=name,
+        weekday=weekday,
+        start_time=time(h, m),
+        end_time=time((h + 2) % 24, m),
+    )
 
 
 def make_member(name: str = "Alice") -> Member:
@@ -32,7 +39,7 @@ def make_member(name: str = "Alice") -> Member:
 
 def make_config(
     member: Member,
-    schedule_type: ScheduleType,
+    schedule_type: ChurchService,
     available: bool = True,
     weight: int = 1,
 ) -> MemberScheduleConfig:
@@ -45,7 +52,7 @@ def make_config(
 
 
 def _make_save_items(
-    schedule_type: ScheduleType,
+    schedule_type: ChurchService,
     member: Member,
     dates: list[date],
 ) -> list[dict[str, int | str]]:
@@ -129,9 +136,31 @@ def test_preview_all_dates_in_requested_month() -> None:
 
 
 @pytest.mark.django_db
-def test_preview_skips_weekday_not_in_map() -> None:
-    # weekday=2 is not in WEEKDAYS_MAP (only 1, 3, 5 are)
-    st = make_schedule_type(weekday=2)
+@pytest.mark.parametrize("weekday", [1, 2, 3, 4, 5, 6, 7])
+def test_preview_generates_for_every_weekday(weekday: int) -> None:
+    """Regression: WEEKDAYS_MAP only covered 1, 3 and 5.
+
+    A service on any other weekday produced no rows and no error — the previous
+    version of this test asserted that silence as if it were intended behaviour.
+    Feature 007 (US4) replaced the map with core.domain.weekday, so every day works.
+    """
+    st = make_schedule_type(weekday=weekday)
+    m = make_member()
+    make_config(m, st)
+    service = _make_service()
+
+    result = service.generate_preview(year=2026, month=5)
+
+    assert result["items"], f"weekday {weekday} generated nothing"
+    assert {i["schedule_type"]["id"] for i in result["items"]} == {st.id}
+
+
+@pytest.mark.django_db
+def test_preview_skips_services_that_take_no_rota() -> None:
+    """The one intentional skip: Escola Bíblica Dominical is held, nobody is rostered."""
+    st = make_schedule_type(weekday=1)
+    st.takes_rota = False
+    st.save()
     m = make_member()
     make_config(m, st)
     service = _make_service()

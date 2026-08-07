@@ -4,7 +4,7 @@
 
 Manages worship songs, play history, hymnal, chord charts, and lyrics for the church app. Provides song suggestions based on play history and supports registering which songs were played each Sunday. Also collects passive hymnal usage history from the app, so the church can see which hymns the congregation actually opens and sings.
 
-> **Implementation status**: everything below is implemented, including the seeded service windows. See `specs/006-hymnal-view-history/` for the full feature spec, plan and tasks.
+> **Implementation status**: everything below is implemented. Service windows moved to the shared catalogue `core.ChurchService` in feature 007 — see `specs/006-hymnal-view-history/` and `specs/007-unify-service-catalogue/`.
 
 ---
 
@@ -80,21 +80,13 @@ One row per hymn view the app counted as real. Passive telemetry — not the off
 | platform         | CharField     | blank                                  |
 | created_at       | DateTimeField | auto_now_add — when the server received it |
 
-### ServiceWindow
+### Service windows — now `core.ChurchService`
 
-Recurring church service time ranges, used to group views into "the same moment". Owned by this domain — not read from the `schedule` feature.
+`ServiceWindow` was deleted by feature 007. The hymnal reads the church's service catalogue from `core.models.ChurchService`, shared with the `schedule` feature, which the constitution forbids importing directly.
 
-| Field      | Type            | Constraints            |
-|------------|-----------------|------------------------|
-| name       | CharField       | e.g. "Culto de Domingo à Noite" |
-| weekday    | IntegerField    | 0-6                    |
-| start_time | TimeField       |                        |
-| end_time   | TimeField       | strictly after start_time |
-| active     | BooleanField    |                        |
+**Weekday is `1 = Sunday … 7 = Saturday`** — one convention across the whole codebase, converted via `core/domain/weekday.py`. Sunday is `1`.
 
-**Weekday is `0 = Monday … 6 = Sunday`** (Python's `datetime.weekday()`), so Sunday is `6`. Note that `schedule.ScheduleType.weekday` uses a *different* convention (`1 = Sunday … 7 = Saturday`) — reconciling them is feature 007.
-
-Seeded by data migration `0006` with the church's real schedule: Terça de Oração (1, 19:30–20:30), Quinta de Oração (3, 19:30–20:30), Escola Bíblica Dominical (6, 09:00–10:00), Culto Dominical (6, 19:30–21:00). These are the *scheduled* end times — matching runs past them by `window_grace_minutes`.
+The catalogue also carries `takes_rota`, which the hymnal ignores: it separates "is held" from "members are scheduled for it", so Escola Bíblica Dominical groups hymn views without generating a rota.
 
 ### HymnalHistorySettings
 
@@ -268,7 +260,7 @@ Dashboard by period — covers week, month, year and any custom range.
 - **Query params**: `from` (date), `to` (date), `group_by` = `service` | `day` | `week` | `month`
 - **Response**: `200` — the occurrences in the range, each with the hymn number and title, its grouping bucket, and how many distinct devices contributed
 
-**Occurrence rule**: an occurrence is a hymn sung *once by the congregation*, not once per person. Collapsing key is hymn + service window; events matching no active window collapse by hymn + calendar day. A window matches from `start_time` until `end_time` plus `window_grace_minutes`, because services run long — the start is never extended. Occurrences are derived at read time, so changing a window or the grace never rewrites stored events.
+**Occurrence rule**: an occurrence is a hymn sung *once by the congregation*, not once per person. Collapsing key is hymn + church service; events matching no active window collapse by hymn + calendar day. A window matches from `start_time` until `end_time` plus `window_grace_minutes`, because services run long — the start is never extended. Occurrences are derived at read time, so changing a window or the grace never rewrites stored events.
 
 ### GET /api/hymnal-history/top-hymns/
 
@@ -317,7 +309,7 @@ Hymnal view history follows the same pattern — its own repositories for view e
 - **AllowAny on most endpoints**: Internal church app, no sensitive data. Only registration of plays requires admin auth.
 - **ETag caching**: Read-only list endpoints use SHA-256 ETag for conditional GET (304 Not Modified).
 - **Random suggestion**: `random.choice` for song selection — simple and adequate for the use case.
-- **View history lives in `songs`, not a new app**: `Hymn` lives here and the constitution forbids features importing from each other. `ServiceWindow` is duplicated here rather than read from `schedule` for the same reason.
+- **View history lives in `songs`, not a new app**: `Hymn` lives here and the constitution forbids features importing from each other. The service catalogue was briefly duplicated here for the same reason, then moved to `core.ChurchService` in feature 007 so both features could share one source of truth.
 - **`Played` vs `HymnalViewEvent`**: intentionally separate. `Played` is the official Sunday repertoire (`Song`, manual, admin). `HymnalViewEvent` is passive usage telemetry (`Hymn`, automatic, app). They coexist and never share models.
 - **AllowAny + throttle on ingest**: this is the only *write* endpoint open to unauthenticated clients. Most members use the hymnal without logging in, so requiring auth would collect a biased and largely empty history. Compensating controls: throttling, a required `device_id`, the `client_event_id` idempotency key, and strict per-event validation. The data carries nothing sensitive.
 - **Client-side duration threshold**: `min_seconds_to_count` is enforced by the app, never re-checked on ingest. A device syncing buffered events may still hold an older config value, and rejecting those would silently drop legitimate history.

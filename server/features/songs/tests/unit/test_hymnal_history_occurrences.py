@@ -12,7 +12,8 @@ from features.songs.hymnal_history_dtos import (
     GROUP_BY_SERVICE,
     GROUP_BY_WEEK,
 )
-from features.songs.models.hymnal_history import ServiceWindow
+from core.models import ChurchService
+from core.domain.weekday import from_python_weekday
 from features.songs.services.hymnal_history_occurrences import (
     bucket_label,
     collapse_events,
@@ -33,24 +34,26 @@ WEDNESDAY_AFTERNOON = datetime(2026, 8, 12, 15, 0, tzinfo=SAO_PAULO)
 def _window(
     window_id: int = 1,
     name: str = "Culto de Domingo à Noite",
-    weekday: int = 6,
+    weekday: int = 1,
     start: time = time(19, 0),
     end: time = time(21, 0),
     active: bool = True,
-) -> ServiceWindow:
-    return ServiceWindow(
+) -> ChurchService:
+    return ChurchService(
         id=window_id, name=name, weekday=weekday, start_time=start, end_time=end, active=active
     )
 
 
 EVENING = _window()
-MORNING = _window(2, "Culto de Domingo pela Manhã", 6, time(10, 30), time(12, 0))
+MORNING = _window(2, "Culto de Domingo pela Manhã", 1, time(10, 30), time(12, 0))
 
 
-class TestSundayIsWeekdaySix:
+class TestSundayIsWeekdayOne:
     def test_the_convention_holds(self) -> None:
+        """Python still says 6 for Sunday; the catalogue stores 1."""
         assert SUNDAY_EVENING.weekday() == 6
-        assert WEDNESDAY_AFTERNOON.weekday() == 2
+        assert from_python_weekday(SUNDAY_EVENING.weekday()) == 1
+        assert from_python_weekday(WEDNESDAY_AFTERNOON.weekday()) == 4
 
 
 class TestMatchWindow:
@@ -91,7 +94,7 @@ class TestMatchWindow:
         assert match_window(before, [EVENING]) is None
 
     def test_grace_crossing_midnight_does_not_wrap(self) -> None:
-        late = _window(9, "Vigília", 6, time(22, 0), time(23, 50))
+        late = _window(9, "Vigília", 1, time(22, 0), time(23, 50))
         inside = datetime(2026, 8, 10, 0, 10, tzinfo=SAO_PAULO)
         # 00:10 on the 10th is Monday, so it must not match a Sunday window...
         assert match_window(inside, [late]) is None
@@ -103,7 +106,7 @@ class TestMatchWindow:
         assert match_window(monday_evening, [EVENING]) is None
 
     def test_overlapping_windows_earliest_start_wins(self) -> None:
-        late = _window(3, "Late", 6, time(19, 15), time(21, 0))
+        late = _window(3, "Late", 1, time(19, 15), time(21, 0))
         assert match_window(SUNDAY_EVENING, [late, EVENING]) is EVENING
         assert match_window(SUNDAY_EVENING, [EVENING, late]) is EVENING
 

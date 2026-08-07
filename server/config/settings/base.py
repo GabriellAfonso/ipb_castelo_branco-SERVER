@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Shared layer. Holds only entities used by two or more features — the church
+    # service catalogue is shared by schedule and songs, which may not import each other.
+    "core",
     "features.accounts",
     "features.songs",
     "features.schedule",

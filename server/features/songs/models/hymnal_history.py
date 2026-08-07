@@ -4,19 +4,15 @@ Separate from ``Played``: that model is the official Sunday repertoire, register
 manually by an admin and pointing at ``Song``. These models record what the
 congregation actually opened in the app, and point at ``Hymn``.
 
-Weekday convention throughout: ``0 = Monday ... 6 = Sunday`` (Python's
-``datetime.weekday()``). Sunday is 6, not 0.
+Service windows now come from the shared catalogue in ``core.models.ChurchService``
+(feature 007); this module no longer owns a copy.
 """
 
 from django.conf import settings
 from django.db import models
-from django.db.models import F, Q
+from django.db.models import Q
 
 from features.songs.models.hymnal import Hymn
-
-# Weekday bounds, kept here so the model constraint and the serializer agree.
-MIN_WEEKDAY = 0
-MAX_WEEKDAY = 6
 
 
 class HymnalViewEvent(models.Model):
@@ -57,39 +53,6 @@ class HymnalViewEvent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.hymn.number} @ {self.viewed_at:%Y-%m-%d %H:%M}"
-
-
-class ServiceWindow(models.Model):
-    """A recurring weekly church service, used to group views into 'the same moment'.
-
-    Owned by this feature rather than read from the schedule feature, because the
-    constitution forbids features importing from each other.
-    """
-
-    name = models.CharField(max_length=100)
-    weekday = models.PositiveSmallIntegerField()
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    active = models.BooleanField(default=True)
-
-    class Meta:
-        # Also the tie-break when two active windows overlap: earliest start wins.
-        ordering = ["weekday", "start_time"]
-        verbose_name = "service window"
-        verbose_name_plural = "service windows"
-        constraints = [
-            models.CheckConstraint(
-                condition=Q(end_time__gt=F("start_time")),
-                name="service_window_end_after_start",
-            ),
-            models.CheckConstraint(
-                condition=Q(weekday__gte=MIN_WEEKDAY) & Q(weekday__lte=MAX_WEEKDAY),
-                name="service_window_weekday_range",
-            ),
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.name} ({self.weekday} {self.start_time}-{self.end_time})"
 
 
 class HymnalHistorySettings(models.Model):

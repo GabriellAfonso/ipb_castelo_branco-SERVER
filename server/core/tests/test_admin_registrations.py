@@ -79,9 +79,9 @@ class TestGalleryAdminRegistrations:
 @pytest.mark.django_db
 class TestScheduleAdminRegistrations:
     def test_schedule_type_registered(self) -> None:
-        from features.schedule.models.schedule import ScheduleType
+        from core.models import ChurchService
 
-        assert admin.site.is_registered(ScheduleType)
+        assert admin.site.is_registered(ChurchService)
 
     def test_member_schedule_config_registered(self) -> None:
         from features.schedule.models.schedule import MemberScheduleConfig

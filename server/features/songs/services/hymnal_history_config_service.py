@@ -4,7 +4,8 @@ from typing import Any
 
 from core.domain.exceptions import ServiceWindowNotFoundError
 from features.songs.hymnal_history_dtos import HymnalHistorySettingsDTO, ServiceWindowDTO
-from features.songs.models.hymnal_history import HymnalHistorySettings, ServiceWindow
+from core.models import ChurchService
+from features.songs.models.hymnal_history import HymnalHistorySettings
 from features.songs.repositories.interfaces import HymnalHistoryRepository
 
 SETTINGS_FIELDS = (
@@ -73,10 +74,16 @@ class HymnalHistoryConfigService:
         return self._to_window_dto(self._repository.update_service_window(window, changes))
 
     def delete_window(self, window_id: int) -> None:
-        """Delete a service window, leaving every stored view event intact."""
+        """Delete a service, refusing when rota history still references it.
+
+        The catalogue is shared with the rota since feature 007. The repository
+        translates the database's own refusal into ``ServiceInUseError`` — this
+        feature cannot count rota rows itself without importing from `schedule`,
+        which the constitution forbids. Deactivate the service instead.
+        """
         self._repository.delete_service_window(self._require_window(window_id))
 
-    def _require_window(self, window_id: int) -> ServiceWindow:
+    def _require_window(self, window_id: int) -> ChurchService:
         window = self._repository.get_service_window(window_id)
         if window is None:
             raise ServiceWindowNotFoundError(window_id)
@@ -92,7 +99,7 @@ class HymnalHistoryConfigService:
             window_grace_minutes=row.window_grace_minutes,
         )
 
-    def _to_window_dto(self, window: ServiceWindow) -> ServiceWindowDTO:
+    def _to_window_dto(self, window: ChurchService) -> ServiceWindowDTO:
         return ServiceWindowDTO(
             id=window.id,
             name=window.name,
@@ -100,4 +107,5 @@ class HymnalHistoryConfigService:
             start_time=window.start_time,
             end_time=window.end_time,
             active=window.active,
+            takes_rota=window.takes_rota,
         )

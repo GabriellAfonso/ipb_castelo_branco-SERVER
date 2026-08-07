@@ -7,16 +7,15 @@ from typing import Any
 from django.utils import timezone
 
 from core.domain.exceptions import ScheduleOverwriteError
+from core.domain.weekday import to_python_weekday
 from core.metrics import SCHEDULE_GENERATED_COUNTER, SCHEDULE_SAVED_COUNTER
 from features.schedule.dtos import MonthlyScheduleDTO
 from features.schedule.repositories.interfaces import ScheduleRepository
 
-
-WEEKDAYS_MAP = {
-    1: calendar.SUNDAY,
-    3: calendar.TUESDAY,
-    5: calendar.THURSDAY,
-}
+# There used to be a WEEKDAYS_MAP here covering only Sunday, Tuesday and Thursday, and
+# any service on another weekday was skipped with no error and no rows. It worked only
+# because the church's three services happened to fall on those days. Replaced by the
+# shared conversion in core/domain/weekday.py, so every weekday now generates.
 
 
 def _next_month_from(today: date) -> tuple[int, int]:
@@ -91,10 +90,13 @@ class ScheduleService:
         schedule_types = self._repository.list_schedule_types()
 
         for schedule_type in schedule_types:
-            if schedule_type.weekday not in WEEKDAYS_MAP:
+            # Escola Bíblica Dominical is held but nobody is rostered for it. This is
+            # the only intentional skip — an unschedulable service must never vanish
+            # silently the way the old weekday map made it.
+            if not schedule_type.takes_rota:
                 continue
 
-            target_weekday = WEEKDAYS_MAP[schedule_type.weekday]
+            target_weekday = to_python_weekday(schedule_type.weekday)
             dates = _month_dates_for_weekday(year, month, target_weekday)
 
             configs = self._repository.list_available_configs(schedule_type.id)

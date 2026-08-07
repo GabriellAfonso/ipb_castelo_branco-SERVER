@@ -7,7 +7,8 @@ from rest_framework.test import APIClient
 
 from conftest import make_admin_client, make_auth_client, make_user
 from features.songs.models.hymnal import Hymn
-from features.songs.models.hymnal_history import HymnalViewEvent, ServiceWindow
+from core.models import ChurchService
+from features.songs.models.hymnal_history import HymnalViewEvent
 
 OCCURRENCES_URL = "/api/hymnal-history/occurrences/"
 TOP_HYMNS_URL = "/api/hymnal-history/top-hymns/"
@@ -20,19 +21,19 @@ WEDNESDAY_AFTERNOON = datetime(2026, 8, 12, 15, 0, tzinfo=SAO_PAULO)
 
 @pytest.fixture(autouse=True)
 def _isolate_from_seeded_windows(db: None) -> None:
-    """Migration 0006 seeds the church's real windows. These tests assert on an
+    """Migration core.0003 seeds the church's real windows. These tests assert on an
     exact set of occurrences, so they start from an empty table."""
-    ServiceWindow.objects.all().delete()
+    ChurchService.objects.all().delete()
 
 
 def _hymn(number: str = "50") -> Hymn:
     return Hymn.objects.create(number=number, title=f"Hino {number}", lyrics=[])
 
 
-def _evening_window() -> ServiceWindow:
-    return ServiceWindow.objects.create(
+def _evening_window() -> ChurchService:
+    return ChurchService.objects.create(
         name="Culto de Domingo à Noite",
-        weekday=6,
+        weekday=1,
         start_time=time(19, 0),
         end_time=time(21, 0),
     )
@@ -94,8 +95,8 @@ class TestOccurrences:
     def test_morning_and_evening_are_two_occurrences(self) -> None:
         hymn = _hymn()
         _evening_window()
-        ServiceWindow.objects.create(
-            name="Manhã", weekday=6, start_time=time(10, 30), end_time=time(12, 0)
+        ChurchService.objects.create(
+            name="Manhã", weekday=1, start_time=time(10, 30), end_time=time(12, 0)
         )
         _store(hymn, SUNDAY_MORNING, "dev-a")
         _store(hymn, SUNDAY_EVENING, "dev-a")

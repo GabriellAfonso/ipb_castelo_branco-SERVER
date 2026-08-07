@@ -10,7 +10,7 @@ from typing import Any
 from rest_framework import serializers
 
 from features.songs.hymnal_history_dtos import GROUP_BY_CHOICES, GROUP_BY_SERVICE
-from features.songs.models.hymnal_history import MAX_WEEKDAY, MIN_WEEKDAY
+from core.models.church_service import MAX_WEEKDAY, MIN_WEEKDAY
 
 # Sanity rails an admin should get a helpful message about, not database invariants.
 SETTINGS_BOUNDS: dict[str, tuple[int, int]] = {
@@ -98,7 +98,7 @@ class HymnalHistorySettingsSerializer(serializers.Serializer[Any]):
 
 
 class ServiceWindowSerializer(serializers.Serializer[Any]):
-    """Weekday is 0=Monday ... 6=Sunday. Sunday is 6, not 0.
+    """Weekday is 1=Sunday ... 7=Saturday. Sunday is 1.
 
     Used for create and, after merging with the stored row, for partial update —
     so a PATCH touching only ``start_time`` is still checked against the existing
@@ -111,12 +111,13 @@ class ServiceWindowSerializer(serializers.Serializer[Any]):
     start_time = serializers.TimeField()
     end_time = serializers.TimeField()
     active = serializers.BooleanField(required=False, default=True)
+    takes_rota = serializers.BooleanField(required=False, default=True)
 
     def validate_weekday(self, value: int) -> int:
         if value < MIN_WEEKDAY or value > MAX_WEEKDAY:
             raise serializers.ValidationError(
                 f"Value {value} is out of range. Expected an integer between "
-                f"{MIN_WEEKDAY} (Monday) and {MAX_WEEKDAY} (Sunday)."
+                f"{MIN_WEEKDAY} (Sunday) and {MAX_WEEKDAY} (Saturday)."
             )
         return value
 

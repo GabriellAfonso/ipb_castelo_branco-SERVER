@@ -7,7 +7,8 @@ import pytest
 
 from core.domain.exceptions import ReportRangeError
 from features.songs.hymnal_history_dtos import ReportRangeDTO
-from features.songs.models.hymnal_history import HymnalViewEvent, ServiceWindow
+from core.models import ChurchService
+from features.songs.models.hymnal_history import HymnalViewEvent
 from features.songs.services.hymnal_history_report_service import HymnalHistoryReportService
 from features.songs.tests.fakes import FakeHymnalHistoryRepository
 
@@ -17,7 +18,7 @@ LABELS = {1: ("50", "Grandioso És Tu"), 2: ("120", "Saudosa Lembrança"), 3: ("
 SUNDAY_EVENING = datetime(2026, 8, 9, 19, 30, tzinfo=SAO_PAULO)
 NEXT_SUNDAY_EVENING = datetime(2026, 8, 16, 19, 30, tzinfo=SAO_PAULO)
 
-EVENING = ServiceWindow(
+EVENING = ChurchService(
     id=1,
     name="Culto de Domingo à Noite",
     weekday=6,

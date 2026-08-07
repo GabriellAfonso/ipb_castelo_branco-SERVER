@@ -123,6 +123,26 @@ class SongsNotFoundError(NotFoundError):
         return {"missing_song_ids": self.missing_ids}
 
 
+class ServiceInUseError(ConflictError):
+    """Raised when deleting a church service that rota history still references.
+
+    Rota rows record what actually happened, so the service must be deactivated
+    rather than deleted.
+    """
+
+    def __init__(self, service_id: int, service_name: str, rota_entries: int) -> None:
+        super().__init__(
+            f"Service '{service_name}' cannot be deleted: "
+            f"{rota_entries} rota entries reference it. Deactivate it instead."
+        )
+        self.service_id = service_id
+        self.service_name = service_name
+        self.rota_entries = rota_entries
+
+    def extra_context(self) -> dict[str, object]:
+        return {"service_id": self.service_id, "rota_entries": self.rota_entries}
+
+
 class ServiceWindowNotFoundError(NotFoundError):
     def __init__(self, window_id: int) -> None:
         super().__init__(f"Service window not found: id={window_id}")

@@ -4,14 +4,15 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from django.db.models import Q
+from django.db.models import ProtectedError, Q
 
+from core.domain.exceptions import ServiceInUseError
+from core.models import ChurchService
 from features.songs.hymnal_history_dtos import ServiceWindowDTO
 from features.songs.models.hymnal import Hymn
 from features.songs.models.hymnal_history import (
     HymnalHistorySettings,
     HymnalViewEvent,
-    ServiceWindow,
 )
 
 SETTINGS_ROW_ID = 1
@@ -109,41 +110,53 @@ class DjangoHymnalHistoryRepository:
         rows = Hymn.objects.filter(id__in=hymn_ids).values_list("id", "number", "title")
         return {pk: (number, title) for pk, number, title in rows}
 
-    def list_active_service_windows(self) -> list[ServiceWindow]:
+    def list_active_service_windows(self) -> list[ChurchService]:
         """Return active windows ordered by weekday then start time.
 
         The ordering is behaviour, not cosmetics: it decides which window wins
         when two overlap.
         """
-        return list(ServiceWindow.objects.filter(active=True))
+        return list(ChurchService.objects.filter(active=True))
 
-    def list_service_windows(self) -> list[ServiceWindow]:
-        return list(ServiceWindow.objects.all())
+    def list_service_windows(self) -> list[ChurchService]:
+        return list(ChurchService.objects.all())
 
-    def get_service_window(self, window_id: int) -> ServiceWindow | None:
-        return ServiceWindow.objects.filter(id=window_id).first()
+    def get_service_window(self, window_id: int) -> ChurchService | None:
+        return ChurchService.objects.filter(id=window_id).first()
 
-    def create_service_window(self, data: ServiceWindowDTO) -> ServiceWindow:
-        return ServiceWindow.objects.create(
+    def create_service_window(self, data: ServiceWindowDTO) -> ChurchService:
+        return ChurchService.objects.create(
             name=data.name,
             weekday=data.weekday,
             start_time=data.start_time,
             end_time=data.end_time,
             active=data.active,
+            takes_rota=data.takes_rota,
         )
 
     def update_service_window(
         self,
-        window: ServiceWindow,
+        window: ChurchService,
         changes: dict[str, Any],
-    ) -> ServiceWindow:
+    ) -> ChurchService:
         for field, value in changes.items():
             setattr(window, field, value)
         window.save(update_fields=list(changes.keys()))
         return window
 
-    def delete_service_window(self, window: ServiceWindow) -> None:
-        window.delete()
+    def delete_service_window(self, window: ChurchService) -> None:
+        """Delete a service, translating the database's refusal into a domain error.
+
+        The catalogue is shared with the rota, whose foreign keys are PROTECT. Letting
+        `ProtectedError` escape would surface as a 500; more importantly, counting the
+        referencing rows here would mean importing from `features.schedule`, which the
+        constitution forbids. The exception already carries them, so the count comes
+        for free and the two features stay decoupled.
+        """
+        try:
+            window.delete()
+        except ProtectedError as exc:
+            raise ServiceInUseError(window.id, window.name, len(exc.protected_objects))
 
     def get_settings(self) -> HymnalHistorySettings:
         """Return the singleton, materialising the defaults on first read.

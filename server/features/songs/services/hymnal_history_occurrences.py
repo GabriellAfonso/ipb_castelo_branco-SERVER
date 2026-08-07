@@ -22,7 +22,8 @@ from features.songs.hymnal_history_dtos import (
     GROUP_BY_WEEK,
     OccurrenceDTO,
 )
-from features.songs.models.hymnal_history import ServiceWindow
+from core.domain.weekday import from_python_weekday
+from core.models import ChurchService
 
 # (hymn_id, service_window_id or None, local date)
 OccurrenceKey = tuple[int, int | None, date]
@@ -35,9 +36,9 @@ DEFAULT_WINDOW_GRACE_MINUTES = 30
 
 def match_window(
     moment: datetime,
-    windows: Iterable[ServiceWindow],
+    windows: Iterable[ChurchService],
     grace_minutes: int = DEFAULT_WINDOW_GRACE_MINUTES,
-) -> ServiceWindow | None:
+) -> ChurchService | None:
     """Return the active window containing ``moment``, or ``None``.
 
     ``moment`` must already be in church-local time. The range is half-open —
@@ -54,7 +55,7 @@ def match_window(
     midnight does not wrap around and silently stop matching.
 
     >>> match_window(local_sunday_evening, windows)
-    <ServiceWindow: Culto Dominical (6 19:30:00-21:00:00)>
+    <ChurchService: Culto Dominical (6 19:30:00-21:00:00)>
     """
     naive = moment.replace(tzinfo=None)
     grace = timedelta(minutes=grace_minutes)
@@ -62,7 +63,7 @@ def match_window(
     candidates = [
         window
         for window in windows
-        if window.weekday == moment.weekday()
+        if window.weekday == from_python_weekday(moment.weekday())
         and datetime.combine(naive.date(), window.start_time)
         <= naive
         < datetime.combine(naive.date(), window.end_time) + grace
@@ -110,7 +111,7 @@ def hymn_sort_key(number: str) -> tuple[int, str]:
 
 def group_events(
     events: Iterable[tuple[int, datetime, str]],
-    windows: Iterable[ServiceWindow],
+    windows: Iterable[ChurchService],
     grace_minutes: int = DEFAULT_WINDOW_GRACE_MINUTES,
 ) -> dict[OccurrenceKey, set[str]]:
     """Collapse raw (hymn_id, viewed_at, device_id) rows into occurrence keys.
@@ -134,7 +135,7 @@ def group_events(
 
 def collapse_events(
     events: Iterable[tuple[int, datetime, str]],
-    windows: Iterable[ServiceWindow],
+    windows: Iterable[ChurchService],
     hymn_labels: dict[int, tuple[str, str]],
     group_by: str = GROUP_BY_SERVICE,
     grace_minutes: int = DEFAULT_WINDOW_GRACE_MINUTES,
@@ -170,7 +171,7 @@ def collapse_events(
 
 
 def _occurrence_sort_key(
-    windows_by_id: dict[int, ServiceWindow],
+    windows_by_id: dict[int, ChurchService],
 ) -> Callable[[OccurrenceDTO], tuple[date, int, str, tuple[int, str]]]:
     """Build the stable ordering key: date, window start (nulls last), hymn number."""
 

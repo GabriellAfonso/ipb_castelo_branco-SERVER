@@ -1,8 +1,10 @@
 from django.contrib import admin
 
-from features.schedule.models.schedule import MemberScheduleConfig, MonthlySchedule, ScheduleType
+from features.schedule.models.schedule import MemberScheduleConfig, MonthlySchedule
 
-admin.site.register([ScheduleType, MemberScheduleConfig])
+# ChurchService (formerly ScheduleType) is registered by core, which now owns it.
+
+admin.site.register([MemberScheduleConfig])
 
 
 @admin.register(MonthlySchedule)

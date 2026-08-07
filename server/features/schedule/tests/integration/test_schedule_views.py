@@ -5,11 +5,11 @@ from unittest.mock import patch
 from django.utils import timezone
 from rest_framework.test import APIClient
 
+from core.models import ChurchService
 from features.members.models.member import Member
 from features.schedule.models.schedule import (
     MemberScheduleConfig,
     MonthlySchedule,
-    ScheduleType,
 )
 from conftest import make_admin_client, make_member_client, make_user, make_auth_client
 
@@ -19,9 +19,15 @@ from conftest import make_admin_client, make_member_client, make_user, make_auth
 
 def make_schedule_type(
     name: str = "Culto", weekday: int = 1, time_str: str = "09:00"
-) -> ScheduleType:
+) -> ChurchService:
     h, m = map(int, time_str.split(":"))
-    return ScheduleType.objects.create(name=name, weekday=weekday, time=time(h, m))
+    # weekday is 1 = Sunday ... 7 = Saturday, matching core.domain.weekday.
+    return ChurchService.objects.create(
+        name=name,
+        weekday=weekday,
+        start_time=time(h, m),
+        end_time=time((h + 2) % 24, m),
+    )
 
 
 def make_member(name: str = "Alice") -> Member:
@@ -29,7 +35,7 @@ def make_member(name: str = "Alice") -> Member:
 
 
 def make_config(
-    member: Member, schedule_type: ScheduleType, available: bool = True, weight: int = 1
+    member: Member, schedule_type: ChurchService, available: bool = True, weight: int = 1
 ) -> MemberScheduleConfig:
     return MemberScheduleConfig.objects.create(
         member=member, schedule_type=schedule_type, available=available, weight=weight
@@ -342,3 +348,86 @@ class TestMonthlyScheduleSaveAPI:
 
         assert resp.status_code == 200
         assert MonthlySchedule.objects.filter(year=2026, month=5).count() == 1
+
+
+# =====================================================================
+# Feature 007 — the rota API must not notice that ChurchService moved
+# =====================================================================
+
+
+@pytest.mark.django_db
+class TestRotaApiUnchangedAfterCatalogueMove:
+    """FR-004: the Android app must not be able to detect the model move.
+
+    It caches `schedule_type.id` between sessions and sends it back, so the ids and
+    the payload shapes are load-bearing.
+    """
+
+    def test_current_groups_by_service_name_and_exposes_the_service_id(self) -> None:
+        client, _ = make_member_client()
+        service = make_schedule_type(name="Domingo Liturgia de Adoração", weekday=1)
+        member = make_member("Alice")
+        MonthlySchedule.objects.create(date=date.today(), schedule_type=service, member=member)
+
+        resp = client.get("/api/schedule/current/")
+
+        assert resp.status_code == 200
+        group = resp.data["schedule"]["Domingo Liturgia de Adoração"]
+        assert group["time"] == "09:00"
+        assert group["items"][0]["schedule_type"]["id"] == service.id
+        assert group["items"][0]["member"]["name"] == "Alice"
+
+    def test_save_accepts_the_flat_payload_form(self) -> None:
+        client, _ = make_admin_client()
+        service = make_schedule_type()
+        member = make_member("Bob")
+
+        resp = client.post(
+            "/api/schedule/save/",
+            {
+                "year": 2026,
+                "month": 5,
+                "items": [
+                    {"date": "2026-05-03", "schedule_type_id": service.id, "member_id": member.id}
+                ],
+            },
+            format="json",
+        )
+
+        assert resp.status_code == 200
+        assert MonthlySchedule.objects.get().schedule_type_id == service.id
+
+    def test_save_accepts_the_nested_payload_the_preview_returns(self) -> None:
+        client, _ = make_admin_client()
+        service = make_schedule_type()
+        member = make_member("Carol")
+
+        resp = client.post(
+            "/api/schedule/save/",
+            {
+                "year": 2026,
+                "month": 5,
+                "items": [
+                    {
+                        "date": "2026-05-03",
+                        "schedule_type": {"id": service.id, "name": service.name},
+                        "member": {"id": member.id, "name": member.name},
+                    }
+                ],
+            },
+            format="json",
+        )
+
+        assert resp.status_code == 200
+        assert MonthlySchedule.objects.get().schedule_type_id == service.id
+
+    def test_preview_returns_the_service_id_the_app_will_send_back(self) -> None:
+        client, _ = make_admin_client()
+        service = make_schedule_type(weekday=1)
+        make_config(make_member("Dave"), service)
+
+        resp = client.post("/api/schedule/generate/", {"year": 2026, "month": 9}, format="json")
+
+        assert resp.status_code == 200
+        assert resp.data["items"], "expected the Sunday service to generate rows"
+        assert {i["schedule_type"]["id"] for i in resp.data["items"]} == {service.id}

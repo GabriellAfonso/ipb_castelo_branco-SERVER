@@ -7,10 +7,10 @@ from rest_framework.test import APIClient
 
 from conftest import make_admin_client, make_auth_client, make_user
 from features.songs.models.hymnal import Hymn
+from core.models import ChurchService
 from features.songs.models.hymnal_history import (
     HymnalHistorySettings,
     HymnalViewEvent,
-    ServiceWindow,
 )
 
 SETTINGS_URL = "/api/hymnal-history/settings/"
@@ -23,15 +23,15 @@ SUNDAY_EVENING = datetime(2026, 8, 9, 19, 30, tzinfo=SAO_PAULO)
 
 @pytest.fixture(autouse=True)
 def _isolate_from_seeded_windows(db: None) -> None:
-    """Migration 0006 seeds the church's real windows. The CRUD tests assert on
+    """Migration core.0003 seeds the church's real windows. The CRUD tests assert on
     exact list contents, so they start from an empty table."""
-    ServiceWindow.objects.all().delete()
+    ChurchService.objects.all().delete()
 
 
 def _window_payload(**overrides: object) -> dict[str, object]:
     payload: dict[str, object] = {
         "name": "Culto de Domingo à Noite",
-        "weekday": 6,
+        "weekday": 1,
         "start_time": "19:00",
         "end_time": "21:00",
     }
@@ -134,8 +134,8 @@ class TestSettingsChangesNeverRewriteHistory:
     def test_stored_events_and_counts_are_unchanged(self) -> None:
         client, _ = make_admin_client()
         hymn = Hymn.objects.create(number="50", title="Hino 50", lyrics=[])
-        ServiceWindow.objects.create(
-            name="Noite", weekday=6, start_time=time(19, 0), end_time=time(21, 0)
+        ChurchService.objects.create(
+            name="Noite", weekday=1, start_time=time(19, 0), end_time=time(21, 0)
         )
         event = HymnalViewEvent.objects.create(
             client_event_id=uuid4(),
@@ -178,7 +178,7 @@ class TestServiceWindowCrud:
         created = self.client.post(WINDOWS_URL, _window_payload(), format="json")
 
         assert created.status_code == 201
-        assert created.data["weekday"] == 6
+        assert created.data["weekday"] == 1
         assert created.data["active"] is True
 
         listed = self.client.get(WINDOWS_URL)
@@ -218,7 +218,7 @@ class TestServiceWindowCrud:
         resp = self.client.delete(f"{WINDOWS_URL}{created.data['id']}/")
 
         assert resp.status_code == 204
-        assert ServiceWindow.objects.count() == 0
+        assert ChurchService.objects.count() == 0
 
     def test_missing_id_is_404(self) -> None:
         resp = self.client.get(f"{WINDOWS_URL}99999/")
@@ -236,12 +236,14 @@ class TestServiceWindowCrud:
         )
         self.client.post(
             WINDOWS_URL,
-            _window_payload(name="Quarta", weekday=2, start_time="19:30", end_time="21:00"),
+            _window_payload(name="Quarta", weekday=4, start_time="19:30", end_time="21:00"),
             format="json",
         )
 
+        # Sunday is 1 and Wednesday is 4, so both Sunday services come first,
+        # ordered by start time.
         names = [w["name"] for w in self.client.get(WINDOWS_URL).data["service_windows"]]
-        assert names == ["Quarta", "Manhã", "Noite"]
+        assert names == ["Manhã", "Noite", "Quarta"]
 
 
 @pytest.mark.django_db
@@ -268,14 +270,14 @@ class TestServiceWindowValidation:
         )
         assert resp.status_code == 400
 
-    @pytest.mark.parametrize("weekday", [-1, 7, 99])
+    @pytest.mark.parametrize("weekday", [-1, 0, 8, 99])
     def test_weekday_out_of_range_is_400(self, weekday: int) -> None:
         resp = self.client.post(WINDOWS_URL, _window_payload(weekday=weekday), format="json")
 
         assert resp.status_code == 400
         message = resp.data["field_errors"]["weekday"][0]
         assert str(weekday) in message
-        assert "Monday" in message and "Sunday" in message
+        assert "Sunday" in message and "Saturday" in message
 
     def test_patch_that_would_invert_the_range_is_400_not_500(self) -> None:
         """Merged against the stored row, so this never reaches the DB constraint."""

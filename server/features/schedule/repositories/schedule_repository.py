@@ -3,19 +3,28 @@ from typing import Any
 
 from django.db import transaction
 
+from core.models import ChurchService
 from features.schedule.dtos import MemberConfigDTO, MonthlyScheduleDTO, ScheduleTypeDTO
 from features.schedule.models.schedule import (
     MemberScheduleConfig,
     MonthlySchedule,
-    ScheduleType,
 )
 
 
 class DjangoScheduleRepository:
     def list_schedule_types(self) -> list[ScheduleTypeDTO]:
         return [
-            ScheduleTypeDTO(id=st.id, name=st.name, weekday=st.weekday, time=st.time)
-            for st in ScheduleType.objects.all()
+            ScheduleTypeDTO(
+                id=service.id,
+                name=service.name,
+                weekday=service.weekday,
+                # `time` keeps its DTO name: it is what the rota response exposes.
+                time=service.start_time,
+                end_time=service.end_time,
+                active=service.active,
+                takes_rota=service.takes_rota,
+            )
+            for service in ChurchService.objects.all()
         ]
 
     def list_available_configs(self, schedule_type_id: int) -> list[MemberConfigDTO]:
@@ -45,7 +54,7 @@ class DjangoScheduleRepository:
                 member_name=s.member.name,
                 schedule_type_id=s.schedule_type_id,
                 schedule_type_name=s.schedule_type.name,
-                schedule_type_time=s.schedule_type.time,
+                schedule_type_time=s.schedule_type.start_time,
             )
             for s in schedules
         ]

@@ -110,7 +110,11 @@ class HymnalHistorySettingsDTO(StrictBaseModel):
 
 
 class ServiceWindowDTO(StrictBaseModel):
-    """A recurring church service window. Weekday is 0=Monday ... 6=Sunday."""
+    """A recurring church service. Weekday is 1=Sunday ... 7=Saturday.
+
+    Backed by the shared catalogue in `core.models.ChurchService` since feature 007;
+    the hymnal no longer owns its own copy.
+    """
 
     id: int | None = None
     name: str
@@ -118,6 +122,8 @@ class ServiceWindowDTO(StrictBaseModel):
     start_time: time
     end_time: time
     active: bool = True
+    # Held but not rostered — Escola Bíblica Dominical. Independent of `active`.
+    takes_rota: bool = True
 
 
 class ReportRangeDTO(StrictBaseModel):

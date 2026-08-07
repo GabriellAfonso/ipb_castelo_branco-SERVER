@@ -8,10 +8,10 @@ from typing import Any
 from uuid import UUID
 
 from features.songs.hymnal_history_dtos import ServiceWindowDTO
+from core.models import ChurchService
 from features.songs.models.hymnal_history import (
     HymnalHistorySettings,
     HymnalViewEvent,
-    ServiceWindow,
 )
 
 
@@ -35,7 +35,7 @@ class FakeHymnalHistoryRepository:
         self,
         stored_events: list[HymnalViewEvent] | None = None,
         hymn_ids: set[int] | None = None,
-        windows: list[ServiceWindow] | None = None,
+        windows: list[ChurchService] | None = None,
         settings: HymnalHistorySettings | None = None,
         hymn_labels: dict[int, tuple[str, str]] | None = None,
     ) -> None:
@@ -45,7 +45,7 @@ class FakeHymnalHistoryRepository:
         self.settings = settings or HymnalHistorySettings(id=1)
         self.hymn_labels = hymn_labels or {}
         self.created_events: list[HymnalViewEvent] = []
-        self.deleted_windows: list[ServiceWindow] = []
+        self.deleted_windows: list[ChurchService] = []
 
     def get_existing_client_event_ids(self, client_event_ids: list[UUID]) -> set[UUID]:
         wanted = set(client_event_ids)
@@ -87,17 +87,17 @@ class FakeHymnalHistoryRepository:
     def get_hymn_labels(self, hymn_ids: set[int]) -> dict[int, tuple[str, str]]:
         return {pk: label for pk, label in self.hymn_labels.items() if pk in hymn_ids}
 
-    def list_active_service_windows(self) -> list[ServiceWindow]:
+    def list_active_service_windows(self) -> list[ChurchService]:
         return [w for w in self.windows if w.active]
 
-    def list_service_windows(self) -> list[ServiceWindow]:
+    def list_service_windows(self) -> list[ChurchService]:
         return list(self.windows)
 
-    def get_service_window(self, window_id: int) -> ServiceWindow | None:
+    def get_service_window(self, window_id: int) -> ChurchService | None:
         return next((w for w in self.windows if w.id == window_id), None)
 
-    def create_service_window(self, data: ServiceWindowDTO) -> ServiceWindow:
-        window = ServiceWindow(
+    def create_service_window(self, data: ServiceWindowDTO) -> ChurchService:
+        window = ChurchService(
             id=len(self.windows) + 1,
             name=data.name,
             weekday=data.weekday,
@@ -110,14 +110,14 @@ class FakeHymnalHistoryRepository:
 
     def update_service_window(
         self,
-        window: ServiceWindow,
+        window: ChurchService,
         changes: dict[str, Any],
-    ) -> ServiceWindow:
+    ) -> ChurchService:
         for field, value in changes.items():
             setattr(window, field, value)
         return window
 
-    def delete_service_window(self, window: ServiceWindow) -> None:
+    def delete_service_window(self, window: ChurchService) -> None:
         self.windows = [w for w in self.windows if w.id != window.id]
         self.deleted_windows.append(window)
 

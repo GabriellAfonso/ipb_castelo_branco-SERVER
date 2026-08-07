@@ -1,4 +1,4 @@
-from datetime import datetime, time, timezone as dt_timezone
+from datetime import datetime, timezone as dt_timezone
 
 import pytest
 from django.db import IntegrityError, transaction
@@ -7,7 +7,6 @@ from features.songs.models.hymnal import Hymn
 from features.songs.models.hymnal_history import (
     HymnalHistorySettings,
     HymnalViewEvent,
-    ServiceWindow,
 )
 
 
@@ -43,68 +42,6 @@ class TestHymnalViewEventModel:
                 viewed_at=datetime(2026, 8, 9, 23, 0, tzinfo=dt_timezone.utc),
                 duration_seconds=40,
             )
-
-
-@pytest.fixture(autouse=True)
-def _isolate_from_seeded_windows(db: None) -> None:
-    """Migration 0006 seeds the church's real windows. These tests assert on a
-    controlled set, so they start from an empty table."""
-    ServiceWindow.objects.all().delete()
-
-
-@pytest.mark.django_db
-class TestServiceWindowModel:
-    def test_str_includes_name_and_range(self) -> None:
-        window = ServiceWindow.objects.create(
-            name="Culto de Domingo à Noite",
-            weekday=6,
-            start_time=time(19, 0),
-            end_time=time(21, 0),
-        )
-        assert "Culto de Domingo à Noite" in str(window)
-
-    def test_end_time_must_be_after_start_time(self) -> None:
-        with pytest.raises(IntegrityError):
-            with transaction.atomic():
-                ServiceWindow.objects.create(
-                    name="Inválido",
-                    weekday=6,
-                    start_time=time(21, 0),
-                    end_time=time(19, 0),
-                )
-
-    def test_end_time_equal_to_start_time_is_rejected(self) -> None:
-        with pytest.raises(IntegrityError):
-            with transaction.atomic():
-                ServiceWindow.objects.create(
-                    name="Inválido",
-                    weekday=6,
-                    start_time=time(19, 0),
-                    end_time=time(19, 0),
-                )
-
-    def test_weekday_above_six_is_rejected(self) -> None:
-        with pytest.raises(IntegrityError):
-            with transaction.atomic():
-                ServiceWindow.objects.create(
-                    name="Inválido",
-                    weekday=7,
-                    start_time=time(19, 0),
-                    end_time=time(21, 0),
-                )
-
-    def test_ordering_is_weekday_then_start_time(self) -> None:
-        ServiceWindow.objects.create(
-            name="Noite", weekday=6, start_time=time(19, 0), end_time=time(21, 0)
-        )
-        ServiceWindow.objects.create(
-            name="Manhã", weekday=6, start_time=time(9, 0), end_time=time(10, 30)
-        )
-        ServiceWindow.objects.create(
-            name="Quarta", weekday=2, start_time=time(19, 30), end_time=time(21, 0)
-        )
-        names = [w.name for w in ServiceWindow.objects.all()]
-        assert names == ["Quarta", "Manhã", "Noite"]
 
 
 @pytest.mark.django_db

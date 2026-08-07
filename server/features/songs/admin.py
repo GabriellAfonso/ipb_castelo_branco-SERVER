@@ -5,7 +5,6 @@ from features.songs.models.hymnal import Hymn
 from features.songs.models.hymnal_history import (
     HymnalHistorySettings,
     HymnalViewEvent,
-    ServiceWindow,
 )
 from features.songs.models.lyrics import Lyrics
 from features.songs.models.song import Category, Played, Song
@@ -19,7 +18,6 @@ admin.site.register(
         ChordChart,
         Lyrics,
         HymnalViewEvent,
-        ServiceWindow,
         HymnalHistorySettings,
     ]
 )
