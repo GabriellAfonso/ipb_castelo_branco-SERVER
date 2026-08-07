@@ -1,6 +1,14 @@
 from django.urls import path
 
 from features.songs.views.hymnal import HymnalAPI
+from features.songs.views.hymnal_history import (
+    HymnalHistoryIngestAPI,
+    HymnalHistoryOccurrencesAPI,
+    HymnalHistorySettingsAPI,
+    HymnalHistoryTopHymnsAPI,
+    ServiceWindowDetailAPI,
+    ServiceWindowListCreateAPI,
+)
 from features.songs.views.register_plays import RegisterSundayPlaysAPI
 from features.songs.views.songs import (
     AllSongsAPI,
@@ -26,4 +34,34 @@ urlpatterns = [
     path("api/chord-charts/<int:pk>/", ChordChartDetailAPI.as_view(), name="chord_chart_detail"),
     path("api/lyrics/", LyricsListAPI.as_view(), name="lyrics"),
     path("api/lyrics/<int:pk>/", LyricsDetailAPI.as_view(), name="lyrics_detail"),
+    path(
+        "api/hymnal-history/events/",
+        HymnalHistoryIngestAPI.as_view(),
+        name="hymnal_history_events",
+    ),
+    path(
+        "api/hymnal-history/occurrences/",
+        HymnalHistoryOccurrencesAPI.as_view(),
+        name="hymnal_history_occurrences",
+    ),
+    path(
+        "api/hymnal-history/top-hymns/",
+        HymnalHistoryTopHymnsAPI.as_view(),
+        name="hymnal_history_top_hymns",
+    ),
+    path(
+        "api/hymnal-history/settings/",
+        HymnalHistorySettingsAPI.as_view(),
+        name="hymnal_history_settings",
+    ),
+    path(
+        "api/hymnal-history/service-windows/",
+        ServiceWindowListCreateAPI.as_view(),
+        name="service_windows",
+    ),
+    path(
+        "api/hymnal-history/service-windows/<int:pk>/",
+        ServiceWindowDetailAPI.as_view(),
+        name="service_window_detail",
+    ),
 ]

@@ -2,7 +2,9 @@
 
 ## Purpose
 
-Manages worship songs, play history, hymnal, chord charts, and lyrics for the church app. Provides song suggestions based on play history and supports registering which songs were played each Sunday.
+Manages worship songs, play history, hymnal, chord charts, and lyrics for the church app. Provides song suggestions based on play history and supports registering which songs were played each Sunday. Also collects passive hymnal usage history from the app, so the church can see which hymns the congregation actually opens and sings.
+
+> **Implementation status**: everything below is implemented, including the seeded service windows. See `specs/006-hymnal-view-history/` for the full feature spec, plan and tasks.
 
 ---
 
@@ -61,6 +63,51 @@ Manages worship songs, play history, hymnal, chord charts, and lyrics for the ch
 | content    | TextField      |              |
 | created_at | DateTimeField  | auto_now_add |
 | updated_at | DateTimeField  | auto_now     |
+
+### HymnalViewEvent
+
+One row per hymn view the app counted as real. Passive telemetry — not the official repertoire.
+
+| Field            | Type          | Constraints                            |
+|------------------|---------------|----------------------------------------|
+| client_event_id  | UUIDField     | unique — idempotency key from the app  |
+| hymn             | FK(Hymn)      | required, PROTECT                      |
+| user             | FK(User)      | nullable, blank, SET_NULL (anonymous)  |
+| device_id        | CharField     | required — one UUID per app install    |
+| viewed_at        | DateTimeField | timezone-aware, sent by the app        |
+| duration_seconds | PositiveIntegerField |                                 |
+| app_version      | CharField     | blank                                  |
+| platform         | CharField     | blank                                  |
+| created_at       | DateTimeField | auto_now_add — when the server received it |
+
+### ServiceWindow
+
+Recurring church service time ranges, used to group views into "the same moment". Owned by this domain — not read from the `schedule` feature.
+
+| Field      | Type            | Constraints            |
+|------------|-----------------|------------------------|
+| name       | CharField       | e.g. "Culto de Domingo à Noite" |
+| weekday    | IntegerField    | 0-6                    |
+| start_time | TimeField       |                        |
+| end_time   | TimeField       | strictly after start_time |
+| active     | BooleanField    |                        |
+
+**Weekday is `0 = Monday … 6 = Sunday`** (Python's `datetime.weekday()`), so Sunday is `6`. Note that `schedule.ScheduleType.weekday` uses a *different* convention (`1 = Sunday … 7 = Saturday`) — reconciling them is feature 007.
+
+Seeded by data migration `0006` with the church's real schedule: Terça de Oração (1, 19:30–20:30), Quinta de Oração (3, 19:30–20:30), Escola Bíblica Dominical (6, 09:00–10:00), Culto Dominical (6, 19:30–21:00). These are the *scheduled* end times — matching runs past them by `window_grace_minutes`.
+
+### HymnalHistorySettings
+
+Singleton (exactly one row, enforced) so an admin can tune collection without a deploy.
+
+| Field                    | Type                 | Default |
+|--------------------------|----------------------|---------|
+| min_seconds_to_count     | PositiveIntegerField | 30      |
+| collapse_window_minutes  | PositiveIntegerField | 10      |
+| max_batch_size           | PositiveIntegerField | 200     |
+| max_past_days            | PositiveIntegerField | 90      |
+| future_tolerance_minutes | PositiveIntegerField | 5       |
+| window_grace_minutes     | PositiveIntegerField | 30      |
 
 ---
 
@@ -190,6 +237,68 @@ Create lyrics for a song.
 
 ---
 
+## Hymnal View History Endpoints
+
+Passive usage telemetry for the hymnal. Separate from `Played` / `RegisterSundayPlaysAPI`, which stays untouched: that one points to `Song` and is registered manually by an admin; this one points to `Hymn` and is collected by the app.
+
+All timestamp reasoning uses `America/Sao_Paulo`.
+
+### POST /api/hymnal-history/events/
+
+Ingest a batch of view events. The app buffers offline and syncs when it has network.
+
+- **Auth**: AllowAny, throttled
+- **Request body**: list of `{ client_event_id, hymn_id, device_id, viewed_at, duration_seconds, app_version?, platform? }`
+- **User attribution**: a valid JWT associates the events to that user; otherwise `user` stays null. `device_id` is required either way.
+- **Response**: `201 { "accepted": ["<client_event_id>"], "rejected": [{ "client_event_id", "reason" }] }`
+- **Per-event rules**:
+  - Idempotency — an existing `client_event_id` creates nothing and still returns in `accepted`
+  - Write-time collapse — an event for the same hymn + device within `collapse_window_minutes` of `viewed_at` is discarded and returned in `accepted`
+  - Unknown `hymn_id` → `rejected`
+  - `viewed_at` beyond now + `future_tolerance_minutes`, or older than `max_past_days` → `rejected`
+  - `duration_seconds` is **not** re-validated against `min_seconds_to_count` — that threshold is client-side, and buffered events may carry an older value
+- **Errors**: `400` for the whole request when the batch exceeds `max_batch_size`
+- **Partial batches must work** — one bad event never blocks the rest. `accepted` means "safe to delete locally" (stored, duplicated or collapsed alike); `rejected` events are also deleted, with the reason logged, so nothing retries forever.
+
+### GET /api/hymnal-history/occurrences/
+
+Dashboard by period — covers week, month, year and any custom range.
+
+- **Auth**: IsAdminUser
+- **Query params**: `from` (date), `to` (date), `group_by` = `service` | `day` | `week` | `month`
+- **Response**: `200` — the occurrences in the range, each with the hymn number and title, its grouping bucket, and how many distinct devices contributed
+
+**Occurrence rule**: an occurrence is a hymn sung *once by the congregation*, not once per person. Collapsing key is hymn + service window; events matching no active window collapse by hymn + calendar day. A window matches from `start_time` until `end_time` plus `window_grace_minutes`, because services run long — the start is never extended. Occurrences are derived at read time, so changing a window or the grace never rewrites stored events.
+
+### GET /api/hymnal-history/top-hymns/
+
+Ranking / chart data — X is the hymn number, Y is how many times it was sung.
+
+- **Auth**: IsAdminUser
+- **Query params**: `from` (optional), `to` (optional) — default is all time
+- **Response**: `200` — only hymns with at least one occurrence, ordered by count descending. Counts occurrences (collapsed), not raw events.
+
+### GET /api/hymnal-history/settings/
+
+- **Auth**: AllowAny — the app reads `min_seconds_to_count` on startup before anyone logs in
+- **Response**: `200` with the singleton values
+
+### PATCH /api/hymnal-history/settings/
+
+- **Auth**: IsAdminUser
+- **Validation**: every field a positive integer within a sane upper bound
+- **Response**: `200` with the updated values
+- **Errors**: `400` naming the field, the offending value and the accepted range
+- Changing a setting affects future behaviour only — it never rewrites stored history.
+
+### CRUD /api/hymnal-history/service-windows/
+
+- **Auth**: IsAdminUser
+- List, create, update and delete service windows from the app
+- **Validation**: `end_time` strictly after `start_time`, `weekday` in 0-6
+
+---
+
 ## Architecture
 
 Follows clean architecture (Views -> Services -> Repositories -> Models):
@@ -197,6 +306,8 @@ Follows clean architecture (Views -> Services -> Repositories -> Models):
 - **Repository**: `DjangoSongRepository` (songs, played, chord charts, lyrics), `DjangoHymnalRepository` (hymns)
 - **Services**: `SongService` (queries + suggestions), `RegisterPlaysService` (play registration), `HymnalService` (hymnal listing)
 - **DI**: All services/repositories registered in `config/di.py`, injected via `@inject` + `Provide[Container.xxx]`
+
+Hymnal view history follows the same pattern — its own repositories for view events, service windows and settings, its own services for ingest and for occurrence reporting, Pydantic DTOs between layers, domain exceptions from `core/domain/exceptions.py`, and DI registration in `config/di.py`. Component names and implementation order are defined in `specs/006-hymnal-view-history/plan.md`.
 
 ---
 
@@ -206,3 +317,9 @@ Follows clean architecture (Views -> Services -> Repositories -> Models):
 - **AllowAny on most endpoints**: Internal church app, no sensitive data. Only registration of plays requires admin auth.
 - **ETag caching**: Read-only list endpoints use SHA-256 ETag for conditional GET (304 Not Modified).
 - **Random suggestion**: `random.choice` for song selection — simple and adequate for the use case.
+- **View history lives in `songs`, not a new app**: `Hymn` lives here and the constitution forbids features importing from each other. `ServiceWindow` is duplicated here rather than read from `schedule` for the same reason.
+- **`Played` vs `HymnalViewEvent`**: intentionally separate. `Played` is the official Sunday repertoire (`Song`, manual, admin). `HymnalViewEvent` is passive usage telemetry (`Hymn`, automatic, app). They coexist and never share models.
+- **AllowAny + throttle on ingest**: this is the only *write* endpoint open to unauthenticated clients. Most members use the hymnal without logging in, so requiring auth would collect a biased and largely empty history. Compensating controls: throttling, a required `device_id`, the `client_event_id` idempotency key, and strict per-event validation. The data carries nothing sensitive.
+- **Client-side duration threshold**: `min_seconds_to_count` is enforced by the app, never re-checked on ingest. A device syncing buffered events may still hold an older config value, and rejecting those would silently drop legitimate history.
+- **No confirmation endpoint**: `client_event_id` gives real idempotency, so the app just re-sends instead of asking the server what it already has.
+- **Occurrences derived at read time**: never materialized. Editing service windows changes future reports without touching a single stored event.

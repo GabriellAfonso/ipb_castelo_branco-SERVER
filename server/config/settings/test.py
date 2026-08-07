@@ -24,5 +24,8 @@ REST_FRAMEWORK = {
         "anon": "99999/min",
         "user": "99999/min",
         "login": "99999/min",
+        # Views that declare throttle_classes explicitly (hymnal ingest) keep throttling
+        # even when DEFAULT_THROTTLE_CLASSES is empty, so the scope must exist here.
+        "hymnal_ingest": "99999/min",
     },
 }

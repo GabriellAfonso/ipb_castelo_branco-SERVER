@@ -1,9 +1,16 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Protocol
+from uuid import UUID
 
 from django.db.models import QuerySet
 
+from features.songs.hymnal_history_dtos import ServiceWindowDTO
 from features.songs.models.chord_chart import ChordChart
+from features.songs.models.hymnal_history import (
+    HymnalHistorySettings,
+    HymnalViewEvent,
+    ServiceWindow,
+)
 from features.songs.models.lyrics import Lyrics
 from features.songs.models.song import Played, Song
 
@@ -59,3 +66,52 @@ class HymnalRepository(Protocol):
     """Contract for hymnal persistence operations."""
 
     def list_all_hymns(self) -> list[dict[str, Any]]: ...
+
+
+class HymnalHistoryRepository(Protocol):
+    """Contract for hymnal view history persistence.
+
+    Every method is bulk by design: ingest must cost a constant number of queries
+    regardless of batch size.
+    """
+
+    def get_existing_client_event_ids(self, client_event_ids: list[UUID]) -> set[UUID]: ...
+
+    def get_collapse_candidates(
+        self,
+        pairs: set[tuple[int, str]],
+        window_start: datetime,
+        window_end: datetime,
+    ) -> list[tuple[int, str, datetime]]: ...
+
+    def get_existing_hymn_ids(self, hymn_ids: set[int]) -> set[int]: ...
+
+    def bulk_create_events(self, events: list[HymnalViewEvent]) -> None: ...
+
+    def list_events_in_range(
+        self,
+        start: datetime | None,
+        end: datetime | None,
+    ) -> list[tuple[int, datetime, str]]: ...
+
+    def get_hymn_labels(self, hymn_ids: set[int]) -> dict[int, tuple[str, str]]: ...
+
+    def list_active_service_windows(self) -> list[ServiceWindow]: ...
+
+    def list_service_windows(self) -> list[ServiceWindow]: ...
+
+    def get_service_window(self, window_id: int) -> ServiceWindow | None: ...
+
+    def create_service_window(self, data: ServiceWindowDTO) -> ServiceWindow: ...
+
+    def update_service_window(
+        self,
+        window: ServiceWindow,
+        changes: dict[str, Any],
+    ) -> ServiceWindow: ...
+
+    def delete_service_window(self, window: ServiceWindow) -> None: ...
+
+    def get_settings(self) -> HymnalHistorySettings: ...
+
+    def update_settings(self, changes: dict[str, int]) -> HymnalHistorySettings: ...

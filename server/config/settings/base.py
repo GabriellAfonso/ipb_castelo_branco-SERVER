@@ -140,6 +140,10 @@ REST_FRAMEWORK = {
         "anon": "500/hour",
         "user": "1000/hour",
         "login": "10/min",
+        # Sized for the whole congregation behind a single church-WiFi NAT address
+        # (~200 devices syncing up to 3x/hour), not for one person. See
+        # specs/006-hymnal-view-history/research.md R-02.
+        "hymnal_ingest": "600/hour",
     },
 }
 

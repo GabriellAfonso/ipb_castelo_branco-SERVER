@@ -1,3 +1,6 @@
+from datetime import date
+
+
 class DomainError(Exception):
     """Base exception for all domain errors.
 
@@ -118,6 +121,44 @@ class SongsNotFoundError(NotFoundError):
 
     def extra_context(self) -> dict[str, object]:
         return {"missing_song_ids": self.missing_ids}
+
+
+class ServiceWindowNotFoundError(NotFoundError):
+    def __init__(self, window_id: int) -> None:
+        super().__init__(f"Service window not found: id={window_id}")
+        self.window_id = window_id
+
+    def extra_context(self) -> dict[str, object]:
+        return {"window_id": self.window_id}
+
+
+class BatchTooLargeError(ValidationError):
+    """Raised when an ingest batch exceeds the configured maximum size."""
+
+    def __init__(self, size: int, max_size: int) -> None:
+        super().__init__(f"Batch of {size} events exceeds max_batch_size of {max_size}.")
+        self.size = size
+        self.max_size = max_size
+
+    def extra_context(self) -> dict[str, object]:
+        return {"size": self.size, "max_size": self.max_size}
+
+
+class ReportRangeError(ValidationError):
+    """Raised when a reporting date range is inverted or wider than allowed."""
+
+    def __init__(self, from_date: date, to_date: date, reason: str) -> None:
+        super().__init__(f"Invalid report range {from_date} to {to_date}: {reason}")
+        self.from_date = from_date
+        self.to_date = to_date
+        self.reason = reason
+
+    def extra_context(self) -> dict[str, object]:
+        return {
+            "from": self.from_date.isoformat(),
+            "to": self.to_date.isoformat(),
+            "reason": self.reason,
+        }
 
 
 class ScheduleOverwriteError(ValidationError):
