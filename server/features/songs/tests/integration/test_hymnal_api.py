@@ -30,6 +30,19 @@ class TestHymnalAPI:
         assert resp.status_code == 200
         assert len(resp.data) == 2
 
+    def test_exposes_the_id_the_ingest_endpoint_needs(self, client: APIClient) -> None:
+        """Without `id`, the app holds only `number` and cannot build a view event.
+
+        The hymn view history ingest keys events on `hymn_id`, so omitting it here
+        made the whole collection flow impossible to use from the app.
+        """
+        hymn = Hymn.objects.create(number="50", title="Grandioso És Tu", lyrics={})
+
+        resp = client.get(URL)
+
+        assert resp.data[0]["id"] == hymn.id
+        assert set(resp.data[0]) == {"id", "number", "title", "lyrics"}
+
     def test_orders_numerically(self, client: APIClient) -> None:
         Hymn.objects.create(number="10", title="Ten", lyrics={})
         Hymn.objects.create(number="2", title="Two", lyrics={})

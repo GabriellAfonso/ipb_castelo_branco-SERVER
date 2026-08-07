@@ -165,7 +165,8 @@ List all hymns ordered by number (numeric sort, with alphanumeric suffix support
 
 - **Auth**: AllowAny
 - **Response**: `200` with ETag support
-- **Response body**: array of `{ number, title, lyrics }`
+- **Response body**: array of `{ id, number, title, lyrics }`
+- **`id` is required by the app**, not decorative: the hymn view history ingest endpoint keys events on `hymn_id`. `number` is a string and cannot substitute for it, so without `id` the app cannot build a valid view event at all.
 - **Note**: Uses REGEXP_REPLACE (PostgreSQL only)
 
 ### POST /api/played/register/

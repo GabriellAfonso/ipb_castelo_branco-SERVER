@@ -34,7 +34,7 @@ otherwise `user` is stored as null. `device_id` is required either way.
 |-------|------|----------|-------|
 | `events` | array | yes | May be empty. Max length = `max_batch_size` (default 200) |
 | `events[].client_event_id` | UUID string | yes | Idempotency key |
-| `events[].hymn_id` | integer | yes | `Hymn.id` |
+| `events[].hymn_id` | integer | yes | `Hymn.id`, as returned by `GET /api/hymnal/` |
 | `events[].device_id` | string ≤ 64 | yes | Required with or without a JWT |
 | `events[].viewed_at` | ISO 8601 with offset | yes | When the hymn was viewed, not when it synced |
 | `events[].duration_seconds` | integer ≥ 0 | yes | Stored as received; never re-validated |
