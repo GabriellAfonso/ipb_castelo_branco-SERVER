@@ -145,6 +145,10 @@ REST_FRAMEWORK = {
         # specs/006-hymnal-view-history/research.md R-02.
         "hymnal_ingest": "600/hour",
     },
+    # The app runs behind nginx, which sets X-Forwarded-For. Without this, DRF trusts a
+    # client-supplied XFF header as the throttle key and every rate limit can be bypassed
+    # by rotating it.
+    "NUM_PROXIES": 1,
 }
 
 
