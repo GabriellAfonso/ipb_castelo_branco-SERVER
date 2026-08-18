@@ -21,7 +21,7 @@ Rules that no domain can break. These apply globally across the entire system.
 - Views never access repositories — only services
 - Services never import HTTP objects (`request`, `HttpResponse`)
 - Repositories are the only layer that touches the ORM
-- Dependencies injected via `dependency-injector` container (`config/container.py`)
+- Dependencies injected via `dependency-injector` container (`config/di.py`)
 - DTOs between layers use Pydantic models, not raw dicts
 
 ## Security
