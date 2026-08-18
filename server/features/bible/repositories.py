@@ -15,7 +15,7 @@ class BibleRepository(Protocol):
     def get_version(self, name: str) -> list[BibleBook] | None: ...
 
 
-class JsonFileBibleRepository:
+class BibleRepositoryImpl:
     """Loads Bible data from static JSON files at construction time."""
 
     def __init__(self) -> None:

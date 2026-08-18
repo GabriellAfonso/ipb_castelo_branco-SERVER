@@ -6,7 +6,7 @@ from django.db import IntegrityError
 from django.utils import timezone
 
 from core.domain.exceptions import ScheduleOverwriteError
-from features.schedule.repositories.schedule_repository import DjangoScheduleRepository
+from features.schedule.repositories.schedule_repository import ScheduleRepositoryImpl
 from features.schedule.services.schedule_service import ScheduleService
 from features.members.models.member import Member
 from core.models import ChurchService
@@ -17,7 +17,7 @@ from features.schedule.models.schedule import MemberScheduleConfig, MonthlySched
 
 
 def _make_service() -> ScheduleService:
-    return ScheduleService(DjangoScheduleRepository())
+    return ScheduleService(ScheduleRepositoryImpl())
 
 
 def make_schedule_type(

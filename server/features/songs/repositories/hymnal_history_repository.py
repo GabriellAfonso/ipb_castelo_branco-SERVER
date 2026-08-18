@@ -18,7 +18,7 @@ from features.songs.models.hymnal_history import (
 SETTINGS_ROW_ID = 1
 
 
-class DjangoHymnalHistoryRepository:
+class HymnalHistoryRepositoryImpl:
     """Hymnal view history repository using Django ORM.
 
     Reads are deliberately bulk: an ingest batch of any size costs a constant

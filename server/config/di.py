@@ -1,27 +1,27 @@
 from dependency_injector import containers, providers
 
-from features.accounts.repositories.profile_repository import DjangoProfileRepository
-from features.accounts.repositories.user_repository import DjangoUserRepository
+from features.accounts.repositories.profile_repository import ProfileRepositoryImpl
+from features.accounts.repositories.user_repository import UserRepositoryImpl
 from features.accounts.services.google_auth_service import GoogleAuthService
 from features.accounts.services.login_service import LoginService
 from features.accounts.services.profile_service import ProfileService
 from features.accounts.services.register_service import RegisterService
 from core.time.clock import SystemClock
-from features.bible.repositories import JsonFileBibleRepository
+from features.bible.repositories import BibleRepositoryImpl
 from features.bible.services import BibleService
-from features.gallery.repositories.gallery_repository import DjangoGalleryRepository
+from features.gallery.repositories.gallery_repository import GalleryRepositoryImpl
 from features.gallery.services.gallery_service import GalleryService
-from features.members.repositories.member_repository import DjangoMemberRepository
+from features.members.repositories.member_repository import MemberRepositoryImpl
 from features.members.services.member_service import MemberService
-from features.songs.repositories.hymnal_history_repository import DjangoHymnalHistoryRepository
-from features.songs.repositories.hymnal_repository import DjangoHymnalRepository
-from features.songs.repositories.song_repository import DjangoSongRepository
+from features.songs.repositories.hymnal_history_repository import HymnalHistoryRepositoryImpl
+from features.songs.repositories.hymnal_repository import HymnalRepositoryImpl
+from features.songs.repositories.song_repository import SongRepositoryImpl
 from features.songs.services.hymnal_history_config_service import HymnalHistoryConfigService
 from features.songs.services.hymnal_history_ingest_service import HymnalHistoryIngestService
 from features.songs.services.hymnal_history_report_service import HymnalHistoryReportService
 from features.songs.services.hymnal_service import HymnalService
 from features.songs.services.register_plays_service import RegisterPlaysService
-from features.schedule.repositories.schedule_repository import DjangoScheduleRepository
+from features.schedule.repositories.schedule_repository import ScheduleRepositoryImpl
 from features.schedule.services.schedule_service import ScheduleService
 from features.songs.services.song_service import SongService
 
@@ -44,8 +44,8 @@ class Container(containers.DeclarativeContainer):
         ]
     )
 
-    user_repository = providers.Factory(DjangoUserRepository)
-    profile_repository = providers.Factory(DjangoProfileRepository)
+    user_repository = providers.Factory(UserRepositoryImpl)
+    profile_repository = providers.Factory(ProfileRepositoryImpl)
 
     register_service = providers.Factory(RegisterService, user_repository=user_repository)
     login_service = providers.Factory(LoginService)
@@ -56,17 +56,17 @@ class Container(containers.DeclarativeContainer):
     )
     profile_service = providers.Factory(ProfileService, profile_repository=profile_repository)
 
-    bible_repository = providers.Singleton(JsonFileBibleRepository)
+    bible_repository = providers.Singleton(BibleRepositoryImpl)
     bible_service = providers.Factory(BibleService, bible_repository=bible_repository)
 
-    gallery_repository = providers.Factory(DjangoGalleryRepository)
+    gallery_repository = providers.Factory(GalleryRepositoryImpl)
     gallery_service = providers.Factory(GalleryService, repository=gallery_repository)
 
     clock = providers.Singleton(SystemClock)
 
-    song_repository = providers.Factory(DjangoSongRepository)
-    hymnal_repository = providers.Factory(DjangoHymnalRepository)
-    hymnal_history_repository = providers.Factory(DjangoHymnalHistoryRepository)
+    song_repository = providers.Factory(SongRepositoryImpl)
+    hymnal_repository = providers.Factory(HymnalRepositoryImpl)
+    hymnal_history_repository = providers.Factory(HymnalHistoryRepositoryImpl)
 
     song_service = providers.Factory(SongService, repository=song_repository)
     register_plays_service = providers.Factory(RegisterPlaysService, repository=song_repository)
@@ -86,8 +86,8 @@ class Container(containers.DeclarativeContainer):
         repository=hymnal_history_repository,
     )
 
-    member_repository = providers.Factory(DjangoMemberRepository)
+    member_repository = providers.Factory(MemberRepositoryImpl)
     member_service = providers.Factory(MemberService, repository=member_repository)
 
-    schedule_repository = providers.Factory(DjangoScheduleRepository)
+    schedule_repository = providers.Factory(ScheduleRepositoryImpl)
     schedule_service = providers.Factory(ScheduleService, repository=schedule_repository)

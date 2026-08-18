@@ -4,7 +4,7 @@ from features.members.dtos import BirthdayDTO, MemberDTO
 from features.members.models.member import Member
 
 
-class DjangoMemberRepository:
+class MemberRepositoryImpl:
     """Member repository using Django ORM."""
 
     def list_active_members(self) -> list[MemberDTO]:

@@ -1,13 +1,13 @@
 import pytest
 
 from features.accounts.models.user import User
-from features.accounts.repositories.user_repository import DjangoUserRepository
+from features.accounts.repositories.user_repository import UserRepositoryImpl
 from core.application.dtos.auth_dtos import RegisterDTO
 
 
 @pytest.fixture
-def repo() -> DjangoUserRepository:
-    return DjangoUserRepository()
+def repo() -> UserRepositoryImpl:
+    return UserRepositoryImpl()
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def sample_dto() -> RegisterDTO:
 
 @pytest.mark.django_db
 def test_create_returns_user_with_correct_data(
-    repo: DjangoUserRepository, sample_dto: RegisterDTO
+    repo: UserRepositoryImpl, sample_dto: RegisterDTO
 ) -> None:
     user = repo.create(sample_dto)
     assert isinstance(user, User)
@@ -33,7 +33,7 @@ def test_create_returns_user_with_correct_data(
 
 
 @pytest.mark.django_db
-def test_get_by_id_returns_user(repo: DjangoUserRepository, sample_dto: RegisterDTO) -> None:
+def test_get_by_id_returns_user(repo: UserRepositoryImpl, sample_dto: RegisterDTO) -> None:
     created = repo.create(sample_dto)
     found = repo.get_by_id(created.id)
     assert found is not None
@@ -41,14 +41,14 @@ def test_get_by_id_returns_user(repo: DjangoUserRepository, sample_dto: Register
 
 
 @pytest.mark.django_db
-def test_get_by_id_returns_none_for_unknown(repo: DjangoUserRepository) -> None:
+def test_get_by_id_returns_none_for_unknown(repo: UserRepositoryImpl) -> None:
     import uuid
 
     assert repo.get_by_id(uuid.uuid4()) is None
 
 
 @pytest.mark.django_db
-def test_get_by_username_returns_user(repo: DjangoUserRepository, sample_dto: RegisterDTO) -> None:
+def test_get_by_username_returns_user(repo: UserRepositoryImpl, sample_dto: RegisterDTO) -> None:
     repo.create(sample_dto)
     found = repo.get_by_username("repouser")
     assert found is not None
@@ -56,12 +56,12 @@ def test_get_by_username_returns_user(repo: DjangoUserRepository, sample_dto: Re
 
 
 @pytest.mark.django_db
-def test_get_by_username_returns_none_for_unknown(repo: DjangoUserRepository) -> None:
+def test_get_by_username_returns_none_for_unknown(repo: UserRepositoryImpl) -> None:
     assert repo.get_by_username("nonexistent") is None
 
 
 @pytest.mark.django_db
-def test_get_by_email_returns_user(repo: DjangoUserRepository, sample_dto: RegisterDTO) -> None:
+def test_get_by_email_returns_user(repo: UserRepositoryImpl, sample_dto: RegisterDTO) -> None:
     user = repo.create(sample_dto)
     user.email = "repo@test.com"
     user.save(update_fields=["email"])
@@ -71,29 +71,29 @@ def test_get_by_email_returns_user(repo: DjangoUserRepository, sample_dto: Regis
 
 
 @pytest.mark.django_db
-def test_get_by_email_returns_none_for_unknown(repo: DjangoUserRepository) -> None:
+def test_get_by_email_returns_none_for_unknown(repo: UserRepositoryImpl) -> None:
     assert repo.get_by_email("nobody@test.com") is None
 
 
 @pytest.mark.django_db
-def test_username_exists_true(repo: DjangoUserRepository, sample_dto: RegisterDTO) -> None:
+def test_username_exists_true(repo: UserRepositoryImpl, sample_dto: RegisterDTO) -> None:
     repo.create(sample_dto)
     assert repo.username_exists("repouser") is True
 
 
 @pytest.mark.django_db
-def test_username_exists_false(repo: DjangoUserRepository) -> None:
+def test_username_exists_false(repo: UserRepositoryImpl) -> None:
     assert repo.username_exists("nonexistent") is False
 
 
 @pytest.mark.django_db
-def test_generate_unique_username_no_collision(repo: DjangoUserRepository) -> None:
+def test_generate_unique_username_no_collision(repo: UserRepositoryImpl) -> None:
     assert repo.generate_unique_username("newuser") == "newuser"
 
 
 @pytest.mark.django_db
 def test_generate_unique_username_with_collision(
-    repo: DjangoUserRepository, sample_dto: RegisterDTO
+    repo: UserRepositoryImpl, sample_dto: RegisterDTO
 ) -> None:
     repo.create(sample_dto)
     # "repouser" exists, should get "repouser1"
@@ -101,7 +101,7 @@ def test_generate_unique_username_with_collision(
 
 
 @pytest.mark.django_db
-def test_create_google_user(repo: DjangoUserRepository) -> None:
+def test_create_google_user(repo: UserRepositoryImpl) -> None:
     user = repo.create_google_user(
         email="google@test.com",
         username="googleuser",

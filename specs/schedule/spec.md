@@ -196,7 +196,7 @@ Persist a rota, replacing the whole month.
 
 Views → Services → Repositories → Models.
 
-- **Repository**: `DjangoScheduleRepository` — the only ORM access. Uses `select_related` on member
+- **Repository**: `ScheduleRepositoryImpl` — the only ORM access. Uses `select_related` on member
   and service when listing.
 - **Service**: `ScheduleService` — generation, grouping and the overwrite rule. Holds all business
   logic and imports no HTTP object.

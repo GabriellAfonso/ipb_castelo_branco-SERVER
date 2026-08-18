@@ -6,7 +6,7 @@ from core.application.dtos.auth_dtos import RegisterDTO
 from features.accounts.repositories.interfaces import UserRepository
 
 
-class DjangoUserRepository(UserRepository):
+class UserRepositoryImpl(UserRepository):
     """Implementação do UserRepository usando Django ORM."""
 
     def create(self, data: RegisterDTO) -> User:

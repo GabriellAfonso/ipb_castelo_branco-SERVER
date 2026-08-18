@@ -4,7 +4,7 @@ from features.songs.hymn_numbering import hymn_sort_key
 from features.songs.models.hymnal import Hymn
 
 
-class DjangoHymnalRepository:
+class HymnalRepositoryImpl:
     """Hymnal repository using Django ORM."""
 
     def list_all_hymns(self) -> list[dict[str, Any]]:

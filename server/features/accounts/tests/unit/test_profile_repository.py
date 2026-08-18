@@ -2,12 +2,12 @@ import pytest
 
 from features.accounts.models.profile import Profile
 from features.accounts.models.user import User
-from features.accounts.repositories.profile_repository import DjangoProfileRepository
+from features.accounts.repositories.profile_repository import ProfileRepositoryImpl
 
 
 @pytest.fixture
-def repo() -> DjangoProfileRepository:
-    return DjangoProfileRepository()
+def repo() -> ProfileRepositoryImpl:
+    return ProfileRepositoryImpl()
 
 
 @pytest.fixture
@@ -18,7 +18,7 @@ def user(db: None) -> User:
 
 
 @pytest.mark.django_db
-def test_get_or_create_creates_profile(repo: DjangoProfileRepository, user: User) -> None:
+def test_get_or_create_creates_profile(repo: ProfileRepositoryImpl, user: User) -> None:
     # Signal already creates profile, so delete it first to test creation
     Profile.objects.filter(user=user).delete()
     profile, created = repo.get_or_create(user)
@@ -27,7 +27,7 @@ def test_get_or_create_creates_profile(repo: DjangoProfileRepository, user: User
 
 
 @pytest.mark.django_db
-def test_get_or_create_returns_existing(repo: DjangoProfileRepository, user: User) -> None:
+def test_get_or_create_returns_existing(repo: ProfileRepositoryImpl, user: User) -> None:
     # Signal creates profile on user creation
     profile, created = repo.get_or_create(user)
     assert created is False
@@ -35,7 +35,7 @@ def test_get_or_create_returns_existing(repo: DjangoProfileRepository, user: Use
 
 
 @pytest.mark.django_db
-def test_save_photo(repo: DjangoProfileRepository, user: User) -> None:
+def test_save_photo(repo: ProfileRepositoryImpl, user: User) -> None:
     profile = user.profile
     repo.save_photo(profile, "test.jpg", b"fake-image-content")
     profile.refresh_from_db()
@@ -45,7 +45,7 @@ def test_save_photo(repo: DjangoProfileRepository, user: User) -> None:
 
 
 @pytest.mark.django_db
-def test_delete_photo(repo: DjangoProfileRepository, user: User) -> None:
+def test_delete_photo(repo: ProfileRepositoryImpl, user: User) -> None:
     profile = user.profile
     repo.save_photo(profile, "test.jpg", b"fake-image-content")
     repo.delete_photo(profile)
@@ -54,7 +54,7 @@ def test_delete_photo(repo: DjangoProfileRepository, user: User) -> None:
 
 
 @pytest.mark.django_db
-def test_delete_photo_noop_when_no_photo(repo: DjangoProfileRepository, user: User) -> None:
+def test_delete_photo_noop_when_no_photo(repo: ProfileRepositoryImpl, user: User) -> None:
     profile = user.profile
     repo.delete_photo(profile)  # should not raise
     profile.refresh_from_db()
@@ -62,7 +62,7 @@ def test_delete_photo_noop_when_no_photo(repo: DjangoProfileRepository, user: Us
 
 
 @pytest.mark.django_db
-def test_update_fields(repo: DjangoProfileRepository, user: User) -> None:
+def test_update_fields(repo: ProfileRepositoryImpl, user: User) -> None:
     profile = user.profile
     updated = repo.update(profile, name="New Name")
     assert updated.name == "New Name"

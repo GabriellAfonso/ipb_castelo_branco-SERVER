@@ -3,7 +3,7 @@ from django.db.models import QuerySet
 from features.gallery.models.gallery import Album, Photo
 
 
-class DjangoGalleryRepository:
+class GalleryRepositoryImpl:
     """Gallery repository using Django ORM."""
 
     def list_all_photos(self) -> QuerySet[Photo]:

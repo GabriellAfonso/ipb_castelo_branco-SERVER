@@ -11,7 +11,7 @@ from features.schedule.models.schedule import (
 )
 
 
-class DjangoScheduleRepository:
+class ScheduleRepositoryImpl:
     def list_schedule_types(self) -> list[ScheduleTypeDTO]:
         return [
             ScheduleTypeDTO(

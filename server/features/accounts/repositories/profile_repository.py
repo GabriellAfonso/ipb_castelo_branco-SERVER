@@ -5,7 +5,7 @@ from features.accounts.models.user import User
 from features.accounts.repositories.interfaces import ProfileRepository
 
 
-class DjangoProfileRepository(ProfileRepository):
+class ProfileRepositoryImpl(ProfileRepository):
     """Implementação do ProfileRepository usando Django ORM."""
 
     def get_or_create(self, user: User) -> tuple[Profile, bool]:

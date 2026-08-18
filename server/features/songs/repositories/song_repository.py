@@ -8,7 +8,7 @@ from features.songs.models.lyrics import Lyrics
 from features.songs.models.song import Played, Song
 
 
-class DjangoSongRepository:
+class SongRepositoryImpl:
     """Song repository using Django ORM."""
 
     def list_all_songs(self) -> QuerySet[Song]:

@@ -3,7 +3,7 @@
 ## Phase 1: Repository completeness
 
 - [x] Add `get_by_email()`, `username_exists()`, `create_google_user()`, `generate_unique_username()` to UserRepository interface + implementation
-- [x] Create `ProfileRepository` interface (protocol) + `DjangoProfileRepository` implementation
+- [x] Create `ProfileRepository` interface (protocol) + `ProfileRepositoryImpl` implementation
 - [x] Register `ProfileRepository` in `config/di.py`
 - [x] Tests for new repository methods
 
@@ -31,7 +31,7 @@
 
 ## Phase 4: Cleanup
 
-- [x] Remove dead `if data:` branch in `DjangoUserRepository.create()`
+- [x] Remove dead `if data:` branch in `UserRepositoryImpl.create()`
 - [x] Remove direct ORM imports from views
 - [x] Remove unused `ProfilePhotoSerializer`
 - [x] Fix type hints in `GoogleAuthService` (`object` -> `User`)

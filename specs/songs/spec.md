@@ -296,7 +296,7 @@ Ranking / chart data — X is the hymn number, Y is how many times it was sung.
 
 Follows clean architecture (Views -> Services -> Repositories -> Models):
 
-- **Repository**: `DjangoSongRepository` (songs, played, chord charts, lyrics), `DjangoHymnalRepository` (hymns)
+- **Repository**: `SongRepositoryImpl` (songs, played, chord charts, lyrics), `HymnalRepositoryImpl` (hymns)
 - **Services**: `SongService` (queries + suggestions), `RegisterPlaysService` (play registration), `HymnalService` (hymnal listing)
 - **DI**: All services/repositories registered in `config/di.py`, injected via `@inject` + `Provide[Container.xxx]`
 
