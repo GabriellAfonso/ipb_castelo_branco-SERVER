@@ -64,8 +64,11 @@ services:
   grafana:
     container_name: ipbcb-grafana-prod
     image: grafana/grafana:11.6.0
+    # Its own file, not ./.env: Grafana has a login form open to the internet and needs
+    # none of the application secrets. Sharing ./.env put DJANGO_SECRET_KEY and
+    # POSTGRES_PASSWORD one `printenv` away from whoever got into this container.
     env_file:
-      - ./.env
+      - ./.env.grafana
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro

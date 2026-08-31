@@ -74,7 +74,12 @@ coverage.xml
 celerybeat-schedule.*
 
 # ─── Ambiente / Segredos ──────────────────────────────────────────────────────
+# Per-service files (.env.grafana, ...) must be ignored too — a bare ".env" only
+# matches the exact name.
 .env
+.env.*
+!.env.example
+!.env.*.example
 
 # ─── Jupyter ──────────────────────────────────────────────────────────────────
 .ipynb_checkpoints

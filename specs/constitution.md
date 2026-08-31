@@ -72,3 +72,11 @@ state impossible to reach quietly.
   is prod, `DEBUG` is off, HSTS is set, and `SIGNING_KEY == SECRET_KEY`.
 - `SECURE_HSTS_PRELOAD` is deliberately off: browser preload is effectively
   irreversible. The HSTS header itself is set.
+
+### Secrets and service boundaries
+- Each service gets only the secrets it needs. `./.env` is the application's file
+  (Django + Postgres); Grafana reads `./.env.grafana`. Never point a public-facing
+  sidecar at the application's env file — it puts `DJANGO_SECRET_KEY` one `printenv`
+  away from anyone who reaches that container.
+- Every per-service env file is git-ignored. `.gitignore` must use `.env.*`, not a bare
+  `.env`, which matches only the exact name.
