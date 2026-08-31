@@ -1,10 +1,20 @@
 from django.db import models
 from features.accounts.models.user import User
+from features.accounts.validators import is_valid_username
 
 
 def profile_photo_path(instance: "Profile", filename: str) -> str:
-    ext = filename.split(".")[-1]
-    return f"profiles/{instance.user.username}/profile_picture.{ext}"
+    """Build the storage path. ``filename`` already carries the validated extension.
+
+    Falls back to the user id when the username predates the username rules: those rows
+    exist, and their usernames may hold path separators or "..".
+
+    >>> profile_photo_path(profile, "profile_picture.png")
+    'profiles/ana.paula/profile_picture.png'
+    """
+    username = instance.user.username
+    folder = username if is_valid_username(username) else str(instance.user.pk)
+    return f"profiles/{folder}/{filename}"
 
 
 class Profile(models.Model):

@@ -67,3 +67,16 @@ def test_register_username_is_case_insensitive() -> None:
     payload = {**VALID_PAYLOAD, "username": "  NewUser  "}
     client.post(REGISTER_URL, payload, format="json")
     assert User.objects.filter(username="newuser").exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("username", ["a/b/c", "..", "foo bar", ".hidden", "joão"])
+def test_register_rejects_a_username_unsafe_as_a_directory_name(username: str) -> None:
+    """The username becomes a folder under MEDIA_ROOT, so the charset is restricted."""
+    client = APIClient()
+
+    response = client.post(REGISTER_URL, {**VALID_PAYLOAD, "username": username}, format="json")
+
+    assert response.status_code == 400
+    assert "username" in response.data["field_errors"]
+    assert not User.objects.filter(username=username).exists()

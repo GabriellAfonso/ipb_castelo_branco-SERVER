@@ -30,7 +30,9 @@ class ProfilePhotoAPIView(APIView):
         if not photo:
             return Response({"detail": "Nenhuma foto enviada."}, status=status.HTTP_400_BAD_REQUEST)
 
-        profile = profile_service.upload_photo(user, photo.name, photo.read())
+        # The file object is handed over whole: the service validates it and the
+        # repository streams it, so the upload is never materialised in memory here.
+        profile = profile_service.upload_photo(user, photo)
 
         return Response(
             {

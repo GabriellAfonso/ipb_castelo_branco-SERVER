@@ -8,7 +8,7 @@ Manages user identity, authentication, and profile. Single entry point for who t
 
 ### User
 - `id`: UUID (PK, auto-generated)
-- `username`: string, max 150, unique, stored lowercase/trimmed
+- `username`: string, max 150, unique, stored lowercase/trimmed, restricted charset (see Business Rules 2)
 - `email`: string, unique (used by Google OAuth)
 - `first_name`: string, max 30
 - `last_name`: string, max 150
@@ -18,7 +18,7 @@ Manages user identity, authentication, and profile. Single entry point for who t
 ### Profile
 - `user`: OneToOne -> User (cascade delete)
 - `name`: string, max 100, blank allowed (auto-filled from first_name + last_name on creation)
-- `photo`: ImageField, nullable (stored at `profiles/{username}/profile_picture.{ext}`)
+- `photo`: ImageField, nullable (stored at `profiles/{username}/profile_picture.{ext}`, where `ext` comes from the decoded image format). Falls back to `profiles/{user_id}/` for legacy usernames that predate the charset rule.
 - `active`: bool, default true
 - `is_member`: bool, default false
 - `is_admin`: bool, default false
@@ -89,8 +89,14 @@ All under `/ipbcb/accounts/`.
 ### POST `api/me/profile/photo/`
 - **Authenticated**
 - Input: multipart photo file
-- Deletes old photo before saving new one
-- Returns: detail message + photo_url (200)
+- Validated by decoded content via `core.files.image_validation`: max 10 MB, and the
+  file must decode as JPEG, PNG, WEBP or GIF. SVG is rejected — Pillow cannot decode it,
+  and it is a scriptable document.
+- The stored extension comes from the detected format, never from the uploaded filename
+- Validation runs **before** the old photo is deleted, so a rejected upload leaves the
+  existing photo intact
+- The file is streamed to storage; it is never fully read into memory
+- Returns: detail message + photo_url (200), or 400 with `VALIDATION_ERROR`
 
 ### DELETE `api/me/profile/photo/`
 - **Authenticated**
@@ -102,14 +108,24 @@ All under `/ipbcb/accounts/`.
 ## Business Rules
 
 1. Username is always stored lowercase and trimmed
-2. Username must be unique (checked at serializer level)
-3. No password complexity requirements — any password >= 6 chars accepted
-4. Google users get unusable password — cannot login via username/password
-5. Google photo only downloaded on first login when profile has no photo yet
-6. Google username collision resolved by appending incrementing counter (e.g., `john`, `john1`, `john2`)
-7. Profile auto-created on user creation (via signal) and on profile access (via get_or_create)
-8. Old profile photos deleted from filesystem when replaced or profile deleted
-9. All auth endpoints share `login` throttle scope
+2. Username matches `^[a-z0-9]([a-z0-9._-]*[a-z0-9])?$` — ASCII lowercase, digits, dot,
+   hyphen and underscore, starting and ending alphanumeric. Narrower than Django's
+   `UnicodeUsernameValidator`, which accepts `..` and every Unicode letter: the username
+   is also a directory name under MEDIA_ROOT, and Unicode letters allow homoglyph
+   impersonation. Validation runs **after** normalisation.
+3. Username must be unique (checked at serializer level)
+4. No password complexity requirements — any password >= 6 chars accepted
+5. Google users get unusable password — cannot login via username/password
+6. Google photo only downloaded on first login when profile has no photo yet
+7. Google username collision resolved by appending incrementing counter (e.g., `john`, `john1`, `john2`)
+7a. The Google username base is derived from the e-mail local part, which never passes
+    through `RegisterSerializer` — it is sanitised (accents transliterated, invalid
+    characters replaced with `-`) so it satisfies rule 2
+7b. The Google avatar is remote, untrusted content: it goes through the same image
+    validation as a user upload. A rejected avatar is logged and never blocks the login
+8. Profile auto-created on user creation (via signal) and on profile access (via get_or_create)
+9. Old profile photos deleted from filesystem when replaced or profile deleted
+10. All auth endpoints share `login` throttle scope
 
 ---
 

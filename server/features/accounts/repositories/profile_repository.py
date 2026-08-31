@@ -1,4 +1,6 @@
-from django.core.files.base import ContentFile
+from typing import IO
+
+from django.core.files import File
 
 from features.accounts.models.profile import Profile
 from features.accounts.models.user import User
@@ -11,8 +13,9 @@ class ProfileRepositoryImpl(ProfileRepository):
     def get_or_create(self, user: User) -> tuple[Profile, bool]:
         return Profile.objects.get_or_create(user=user)
 
-    def save_photo(self, profile: Profile, filename: str, content: bytes) -> None:
-        profile.photo.save(filename, ContentFile(content), save=True)
+    def save_photo(self, profile: Profile, extension: str, upload: IO[bytes]) -> None:
+        """Stream the upload to storage — Django writes it in chunks, never all at once."""
+        profile.photo.save(f"profile_picture.{extension}", File(upload), save=True)
 
     def delete_photo(self, profile: Profile) -> None:
         if profile.photo:

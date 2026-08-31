@@ -1,4 +1,5 @@
 import logging
+from io import BytesIO
 
 import requests as http_requests
 from django.conf import settings
@@ -7,15 +8,18 @@ from google.oauth2 import id_token
 
 from core.application.dtos.auth_dtos import TokenDTO
 from core.application.dtos.google_auth_dto import GoogleUserDTO
+from core.files.image_validation import detect_image_extension
 from core.domain.exceptions import (
     GoogleUserCreationError,
     InvalidGoogleTokenError,
     UnverifiedGoogleEmailError,
+    ValidationError,
 )
 from core.metrics import LOGIN_COUNTER
 from features.accounts.auth.jwt import get_tokens_for_user
 from features.accounts.models.user import User
 from features.accounts.repositories.interfaces import ProfileRepository, UserRepository
+from features.accounts.validators import sanitize_username
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +68,9 @@ class GoogleAuthService:
         if user:
             return user
 
-        base_username = dto.email.split("@")[0]
+        # The e-mail local part never passes through RegisterSerializer, so it is the
+        # one way a username breaking the rules could still be created.
+        base_username = sanitize_username(dto.email.split("@")[0])
         username = self._user_repo.generate_unique_username(base_username)
 
         try:
@@ -89,8 +95,16 @@ class GoogleAuthService:
         try:
             response = http_requests.get(photo_url, timeout=5)
             if response.status_code == 200:
-                ext = photo_url.split("?")[0].split(".")[-1] or "jpg"
-                filename = f"google_{user.username}.{ext}"
-                self._profile_repo.save_photo(profile, filename, response.content)
-        except (OSError, ValueError, http_requests.RequestException) as exc:
+                # Remote bytes are still untrusted bytes, and the extension came from a
+                # URL. Same content check as a user upload.
+                upload = BytesIO(response.content)
+                extension = detect_image_extension(upload)
+                self._profile_repo.save_photo(profile, extension, upload)
+        except (
+            OSError,
+            ValueError,
+            ValidationError,
+            http_requests.RequestException,
+        ) as exc:
+            # A bad avatar must never block a valid login.
             logger.warning("Failed to save Google profile photo: %s", exc)

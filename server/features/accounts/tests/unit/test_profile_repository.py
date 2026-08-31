@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import pytest
 
 from features.accounts.models.profile import Profile
@@ -37,7 +39,7 @@ def test_get_or_create_returns_existing(repo: ProfileRepositoryImpl, user: User)
 @pytest.mark.django_db
 def test_save_photo(repo: ProfileRepositoryImpl, user: User) -> None:
     profile = user.profile
-    repo.save_photo(profile, "test.jpg", b"fake-image-content")
+    repo.save_photo(profile, "jpg", BytesIO(b"fake-image-content"))
     profile.refresh_from_db()
     assert profile.photo is not None
     assert profile.photo.name is not None
@@ -45,9 +47,18 @@ def test_save_photo(repo: ProfileRepositoryImpl, user: User) -> None:
 
 
 @pytest.mark.django_db
+def test_save_photo_uses_the_extension_it_is_given(repo: ProfileRepositoryImpl, user: User) -> None:
+    """The extension comes from the detected format, never from a client filename."""
+    repo.save_photo(user.profile, "png", BytesIO(b"fake-image-content"))
+    user.profile.refresh_from_db()
+
+    assert (user.profile.photo.name or "").endswith(".png")
+
+
+@pytest.mark.django_db
 def test_delete_photo(repo: ProfileRepositoryImpl, user: User) -> None:
     profile = user.profile
-    repo.save_photo(profile, "test.jpg", b"fake-image-content")
+    repo.save_photo(profile, "jpg", BytesIO(b"fake-image-content"))
     repo.delete_photo(profile)
     profile.refresh_from_db()
     assert not profile.photo

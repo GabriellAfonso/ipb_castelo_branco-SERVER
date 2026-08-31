@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.request import Request
 
 from features.accounts.models.profile import Profile
+from features.accounts.validators import USERNAME_RULE_MESSAGE, is_valid_username
 from features.accounts.models.user import User
 from core.application.dtos.auth_dtos import RegisterDTO
 
@@ -27,7 +28,10 @@ class RegisterSerializer(serializers.Serializer[RegisterData]):
     )
 
     def validate_username(self, value: str) -> str:
+        # Order matters: "ADMIN" is only valid once lowercased.
         normalized = value.strip().lower()
+        if not is_valid_username(normalized):
+            raise serializers.ValidationError(USERNAME_RULE_MESSAGE)
         if User.objects.filter(username=normalized).exists():
             raise serializers.ValidationError(_("Este nome de usuário já está em uso."))
         return normalized

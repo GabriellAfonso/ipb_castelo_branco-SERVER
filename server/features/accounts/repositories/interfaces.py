@@ -1,4 +1,4 @@
-from typing import Optional, Protocol
+from typing import IO, Optional, Protocol
 
 from features.accounts.models.profile import Profile
 from features.accounts.models.user import User
@@ -47,8 +47,8 @@ class ProfileRepository(Protocol):
         """Retorna (profile, created)."""
         ...
 
-    def save_photo(self, profile: Profile, filename: str, content: bytes) -> None:
-        """Salva foto no perfil."""
+    def save_photo(self, profile: Profile, extension: str, upload: IO[bytes]) -> None:
+        """Salva foto no perfil. A extensão vem do formato detectado, não do nome enviado."""
         ...
 
     def delete_photo(self, profile: Profile) -> None:
