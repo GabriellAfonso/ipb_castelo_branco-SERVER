@@ -24,11 +24,28 @@ def env_bool(name: str, default: bool = False) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "y", "on"}
 
 
+def reject_dev_settings_in_production(loaded_module: str) -> None:
+    """Raise when DJANGO_ENV asks for production but a non-production module loaded.
+
+    Production degrades silently under dev settings: it boots fine, just without HSTS,
+    without secure cookies and with DEBUG on. Failing at import makes the mistake loud.
+
+    >>> reject_dev_settings_in_production("config.settings.dev")
+    """
+    env = (os.environ.get("DJANGO_ENV") or "").strip().lower()
+    if env not in {"prod", "production"}:
+        return
+    raise RuntimeError(
+        f"DJANGO_ENV={env} but {loaded_module} was loaded. DJANGO_SETTINGS_MODULE is "
+        f"overriding the DJANGO_ENV selection — expected config.settings.prod."
+    )
+
+
 # Core
-SECRET_KEY = os.environ.get(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-ufeshinhw3=4&-^bh08^e(sn&4t=vy6=7d8b-d%o+3)#7a@jpc",
-)
+# No fallback on purpose. A default key committed here becomes the JWT signing key the
+# moment production loads the wrong settings module, turning a misconfiguration into a
+# full authentication bypass. Each environment module supplies its own key.
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", default="")
 
@@ -78,6 +95,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "config.urls"
 
+# drf-spectacular falls back gracefully when it cannot infer a serializer from a plain
+# APIView — informational, not a defect. Silenced so `check --deploy` in CI stays a
+# signal: any warning it still reports is one worth reading.
+SILENCED_SYSTEM_CHECKS = ["drf_spectacular.W002"]
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -124,6 +146,8 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "ALGORITHM": "HS256",
+    # Frozen at import time. Every settings module that reassigns SECRET_KEY must also
+    # reassign SIGNING_KEY, or tokens keep being signed with the value read right here.
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }

@@ -5,6 +5,11 @@ from .base import *  # noqa
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
+# base.py has no fallback key, so the suite supplies its own.
+# At least 32 bytes: PyJWT warns below that for HS256 (RFC 7518 §3.2).
+SECRET_KEY = "insecure-test-only-key-with-enough-bytes-for-hs256"  # nosec B105
+SIMPLE_JWT = {**SIMPLE_JWT, "SIGNING_KEY": SECRET_KEY}  # noqa: F405
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",

@@ -20,6 +20,11 @@ services:
         --capture-output
     env_file:
       - ./.env
+    # Declared here, not in .env: `environment` wins over `env_file`, so a stale
+    # DJANGO_SETTINGS_MODULE in .env can no longer boot production on dev settings.
+    environment:
+      DJANGO_ENV: prod
+      DJANGO_SETTINGS_MODULE: config.settings.prod
     volumes:
       - ./server/static/:/server/static/
       - ./server/media:/server/media/

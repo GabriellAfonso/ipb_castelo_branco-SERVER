@@ -32,6 +32,10 @@ def _require_csv_env(name: str) -> list[str]:
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 GOOGLE_CLIENT_ID = os.environ["GOOGLE_CLIENT_ID"]
 
+# base.py froze SIGNING_KEY at import time, before the reassignment above. Without this
+# line every JWT stays signed with whatever base.py read, not with the key required here.
+SIMPLE_JWT = {**SIMPLE_JWT, "SIGNING_KEY": SECRET_KEY}  # noqa: F405
+
 ALLOWED_HOSTS = _require_csv_env("DJANGO_ALLOWED_HOSTS")
 CSRF_TRUSTED_ORIGINS = _require_csv_env("DJANGO_CSRF_TRUSTED_ORIGINS")
 
@@ -45,6 +49,9 @@ SECURE_SSL_REDIRECT = True
 SECURE_REDIRECT_EXEMPT = [r"^metrics$", r"^ipbcb/metrics$"]
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# security.W021 asks for SECURE_HSTS_PRELOAD. Left off deliberately: browser preload is
+# effectively irreversible once the domain is on the list. The HSTS header itself is set.
+SILENCED_SYSTEM_CHECKS = [*SILENCED_SYSTEM_CHECKS, "security.W021"]  # noqa: F405
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 

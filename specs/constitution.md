@@ -29,6 +29,13 @@ Rules that no domain can break. These apply globally across the entire system.
 - `DEBUG = False` in production — never expose tracebacks
 - No password complexity validators — user chooses any password
 - OpenAPI schema is intentionally public — accepted risk for internal church app
+- `base.py` reads `DJANGO_SECRET_KEY` with **no fallback**. Each environment module
+  supplies its own key. A default committed to the repository becomes the JWT signing
+  key the moment production loads the wrong settings module, which turns a
+  misconfiguration into a full authentication bypass rather than a degraded deploy.
+- Any settings module that reassigns `SECRET_KEY` must also reassign
+  `SIMPLE_JWT["SIGNING_KEY"]`. The dict is built once when `base.py` is imported and
+  does not follow a later reassignment — the mismatch is silent.
 
 ## Code Standards
 - All code in English (variables, functions, classes, files, comments, commits)
@@ -39,3 +46,23 @@ Rules that no domain can break. These apply globally across the entire system.
 ## Deployment
 - Base path `/ipbcb/` behind nginx — never hardcode absolute URLs
 - Single client: Android app (`ipbcb-app`) — no web frontend
+
+### Settings selection
+Production running dev settings is silent — it boots normally, just without HSTS,
+without secure cookies and with `DEBUG` on. Every rule below exists to make that
+state impossible to reach quietly.
+
+- `DJANGO_ENV` alone selects the settings module. **`DJANGO_SETTINGS_MODULE` never goes
+  in `.env`**: `asgi.py` uses `os.environ.setdefault`, so a value in `.env` wins over
+  the `DJANGO_ENV` selection without any error.
+- Both compose files pin `DJANGO_ENV` and `DJANGO_SETTINGS_MODULE` under `environment:`,
+  which takes precedence over `env_file:`. The `.env` cannot override the choice.
+- `config.settings.dev` calls `reject_dev_settings_in_production()` and refuses to
+  import when `DJANGO_ENV` is `prod`/`production`.
+- CI runs `manage.py check --deploy --fail-level WARNING` against `config.settings.prod`
+  with placeholder secrets. A check is silenced only via `SILENCED_SYSTEM_CHECKS` with
+  the reason written beside it.
+- CD asserts against the **running container** — not the config — that `SETTINGS_MODULE`
+  is prod, `DEBUG` is off, HSTS is set, and `SIGNING_KEY == SECRET_KEY`.
+- `SECURE_HSTS_PRELOAD` is deliberately off: browser preload is effectively
+  irreversible. The HSTS header itself is set.

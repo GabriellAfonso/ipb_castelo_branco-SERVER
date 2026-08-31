@@ -12,6 +12,9 @@ services:
       "
     env_file:
       - ./.env
+    environment:
+      DJANGO_ENV: dev
+      DJANGO_SETTINGS_MODULE: config.settings.dev
     ports:
       - "8000:8000"
     volumes:
