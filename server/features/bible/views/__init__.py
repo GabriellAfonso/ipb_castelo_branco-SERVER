@@ -1,4 +1,5 @@
 from dependency_injector.wiring import Provide, inject
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
@@ -12,6 +13,10 @@ from features.bible.services import BibleService
 class BibleListView(APIView):
     permission_classes = [AllowAny]
 
+    # Both bible routes generate the operationId "bible_retrieve" otherwise, and
+    # drf-spectacular resolves the clash with a numeral suffix — which would name the
+    # generated Android client methods after collision order instead of intent.
+    @extend_schema(operation_id="bible_versions_list")
     @inject
     def get(
         self,
@@ -25,6 +30,7 @@ class BibleListView(APIView):
 class BibleDetailView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(operation_id="bible_version_retrieve")
     @inject
     def get(
         self,
