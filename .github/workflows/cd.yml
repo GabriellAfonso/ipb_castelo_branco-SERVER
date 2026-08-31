@@ -23,6 +23,23 @@ jobs:
             git pull origin master
             docker compose -f compose.prod.yml up --build -d
 
+      - name: Assert the container really booted production settings
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ${{ secrets.VPS_APP_PATH }}
+            docker compose -f compose.prod.yml exec -T ipbcb_server python -c "
+            from django.conf import settings
+            assert settings.SETTINGS_MODULE == 'config.settings.prod', settings.SETTINGS_MODULE
+            assert settings.DEBUG is False, 'DEBUG is on in production'
+            assert settings.SECURE_HSTS_SECONDS, 'HSTS disabled — not production settings'
+            assert settings.SIMPLE_JWT['SIGNING_KEY'] == settings.SECRET_KEY, 'stale SIGNING_KEY'
+            print('production settings confirmed')
+            "
+
       - name: Health check
         run: |
           sleep 10

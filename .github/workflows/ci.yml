@@ -29,6 +29,19 @@ jobs:
       - name: Security scan (bandit)
         run: bandit -r server/ -c pyproject.toml
 
+      # Catches a production settings module that stopped being production-hardened.
+      # Values are placeholders: this asserts the module's shape, not the real secrets.
+      - name: Django deploy checks
+        working-directory: server
+        env:
+          DJANGO_ENV: prod
+          DJANGO_SETTINGS_MODULE: config.settings.prod
+          DJANGO_SECRET_KEY: eb7Qk2vX9pLm4TzR8sNwJ5yHcA3dGfUxPqBnMeVtZrK6WjSyD1
+          GOOGLE_CLIENT_ID: ci-only
+          DJANGO_ALLOWED_HOSTS: example.com
+          DJANGO_CSRF_TRUSTED_ORIGINS: https://example.com
+        run: python manage.py check --deploy --fail-level WARNING
+
       - name: Type check (mypy)
         working-directory: server
         run: mypy .
