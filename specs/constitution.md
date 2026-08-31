@@ -9,6 +9,12 @@ Rules that no domain can break. These apply globally across the entire system.
 
 ## Data Integrity
 - All user input validated via DRF serializer before reaching the database
+- Uploaded files are validated by **decoded content**, never by filename or Content-Type,
+  and the stored extension is derived from the detected format. `Model.save()` does not
+  run field validators, so an `ImageField` alone validates nothing — go through
+  `core.files.image_validation`.
+- Uploads are size-checked before being read, and streamed to storage rather than loaded
+  into memory
 - No `.raw()` or string-formatted SQL with user input — ORM only
 - No queries inside loops — use `select_related` / `prefetch_related`
 
