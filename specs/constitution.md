@@ -80,3 +80,15 @@ state impossible to reach quietly.
   away from anyone who reaches that container.
 - Every per-service env file is git-ignored. `.gitignore` must use `.env.*`, not a bare
   `.env`, which matches only the exact name.
+
+### Metrics endpoint
+- `/ipbcb/metrics` is blocked at nginx (`location = /ipbcb/metrics { return 404; }`).
+  It is unauthenticated by nature and leaks the endpoint map, request volumes, latencies
+  and the login success/failure counters. The block lives in the `nginx-deploy`
+  repository, so this is its only record inside this project.
+- Prometheus is unaffected: it scrapes `ipbcb-server-prod:8000/metrics` over the Docker
+  network, never through nginx. Dashboards are at `/ipbcb/gfd/`, behind Grafana's login.
+- `SECURE_REDIRECT_EXEMPT` therefore holds `^metrics$` only. Under ASGI,
+  `FORCE_SCRIPT_NAME` leaves `request.path` as the path nginx sent, so `^metrics$` matches
+  the internal scrape and `^ipbcb/metrics$` matched the public one — keeping the second
+  pattern served metrics over plain HTTP to the internet.

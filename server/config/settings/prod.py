@@ -46,7 +46,12 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
 
 SECURE_SSL_REDIRECT = True
-SECURE_REDIRECT_EXEMPT = [r"^metrics$", r"^ipbcb/metrics$"]
+# Only the internal Prometheus scrape, which reaches the container directly as
+# GET /metrics over HTTP inside the Docker network. The public "/ipbcb/metrics" is
+# blocked at nginx and must redirect to HTTPS like everything else — under ASGI the two
+# paths produce different request.path values, so dropping the second pattern is what
+# stops metrics being served in the clear.
+SECURE_REDIRECT_EXEMPT = [r"^metrics$"]
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 # security.W021 asks for SECURE_HSTS_PRELOAD. Left off deliberately: browser preload is
