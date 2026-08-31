@@ -5,7 +5,8 @@ import pytest
 from PIL import Image
 
 from core.domain.exceptions import NotFoundError
-from features.gallery.services.gallery_service import GalleryService, MAX_FILE_SIZE
+from core.files.image_validation import MAX_IMAGE_BYTES
+from features.gallery.services.gallery_service import GalleryService
 
 
 def _make_image_bytes(name: str = "test.jpg", fmt: str = "JPEG") -> io.BytesIO:
@@ -78,7 +79,7 @@ class TestUploadPhotos:
         service = GalleryService(repository=repo)
 
         big_file = _make_image_bytes("big.jpg")
-        setattr(big_file, "size", MAX_FILE_SIZE + 1)
+        setattr(big_file, "size", MAX_IMAGE_BYTES + 1)
 
         result = service.upload_photos(1, [big_file])
 
@@ -119,13 +120,13 @@ class TestUploadPhotos:
         assert len(result.errors) == 1
         repo.create_photo.assert_called_once()
 
-    def test_file_without_size_skips_size_check(self) -> None:
+    def test_file_without_size_attribute_is_measured(self) -> None:
         repo = _make_repo()
         repo.get_album_by_id.return_value = MagicMock()
         service = GalleryService(repository=repo)
 
         img = _make_image_bytes("nosiz.jpg")
-        delattr(img, "size")  # no size attribute
+        delattr(img, "size")  # falls back to measuring the stream
 
         result = service.upload_photos(1, [img])
 

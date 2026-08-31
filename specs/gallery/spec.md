@@ -84,8 +84,9 @@ Accepts `album` (ID) and `images` (file list).
 
 **Validation rules:**
 - Album and at least one file must be provided
-- Max file size: 10 MB per file
-- File must pass PIL `Image.verify()` (JPEG, PNG, WEBP, GIF)
+- Delegated to `core.files.image_validation.detect_image_extension`, shared with the
+  profile photo upload: max 10 MB, and the file must decode as JPEG, PNG, WEBP or GIF
+- Raised per file and caught per file, so one bad file never fails the batch
 
 **Behavior:**
 - Valid files create Photo records linked to selected album
@@ -95,8 +96,11 @@ Accepts `album` (ID) and `images` (file list).
 
 **Error messages (user-facing, Portuguese):**
 - Missing album/files: "Selecione um album e ao menos uma imagem."
-- Oversized: "{filename}: arquivo muito grande (max. 10 MB)."
-- Invalid format: "{filename}: formato invalido. Use JPEG, PNG, WEBP ou GIF."
+- Oversized: "{filename}: Arquivo muito grande: {n} bytes. O maximo e {max} bytes (10 MB)."
+- Invalid format: "{filename}: Formato invalido: o arquivo enviado nao e uma imagem
+  legivel. Use JPEG, PNG, WEBP ou GIF."
+- Both come from `core.files.image_validation`, which is why its messages are in
+  Portuguese: they reach the user verbatim
 
 ---
 

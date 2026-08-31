@@ -5,7 +5,7 @@ from django.test import Client
 from PIL import Image
 
 from features.gallery.models.gallery import Album, Photo
-from features.gallery.services.gallery_service import MAX_FILE_SIZE, _is_valid_image
+from core.files.image_validation import MAX_IMAGE_BYTES
 
 
 UPLOAD_URL = "/admin/gallery/album/upload/"
@@ -21,23 +21,6 @@ def _make_image_file(
     buf.seek(0)
     buf.name = name
     return buf
-
-
-class TestIsValidImage:
-    def test_valid_jpeg(self) -> None:
-        assert _is_valid_image(_make_image_file()) is True
-
-    def test_valid_png(self) -> None:
-        assert _is_valid_image(_make_image_file("t.png", "PNG")) is True
-
-    def test_invalid_file(self) -> None:
-        buf = io.BytesIO(b"not an image at all")
-        assert _is_valid_image(buf) is False
-
-    def test_resets_seek_position(self) -> None:
-        buf = _make_image_file()
-        _is_valid_image(buf)
-        assert buf.tell() == 0
 
 
 @pytest.mark.django_db
@@ -101,12 +84,12 @@ class TestUploadPhotosView:
             field_name="images",
             name="big.jpg",
             content_type="image/jpeg",
-            size=MAX_FILE_SIZE + 1,
+            size=MAX_IMAGE_BYTES + 1,
             charset=None,
         )
 
         with patch.object(
-            type(oversized), "size", new_callable=PropertyMock, return_value=MAX_FILE_SIZE + 1
+            type(oversized), "size", new_callable=PropertyMock, return_value=MAX_IMAGE_BYTES + 1
         ):
             response = self.client.post(
                 UPLOAD_URL,

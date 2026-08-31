@@ -1,25 +1,13 @@
 from collections.abc import Sequence
 from typing import IO
 
-from PIL import Image
 from django.db.models import QuerySet
 
-from core.domain.exceptions import NotFoundError
+from core.domain.exceptions import NotFoundError, ValidationError
+from core.files.image_validation import detect_image_extension
 from features.gallery.dtos.gallery_dtos import UploadResult
 from features.gallery.models.gallery import Album, Photo
 from features.gallery.repositories.interfaces import GalleryRepository
-
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
-
-
-def _is_valid_image(f: IO[bytes]) -> bool:
-    try:
-        img = Image.open(f)
-        img.verify()
-        f.seek(0)
-        return True
-    except Exception:
-        return False
 
 
 class GalleryService:
@@ -50,13 +38,13 @@ class GalleryService:
 
         for f in files:
             name = getattr(f, "name", "") or ""
-            size = getattr(f, "size", None)
 
-            if size is not None and size > MAX_FILE_SIZE:
-                errors.append(f"{name}: arquivo muito grande (máx. 10 MB).")
-                continue
-            if not _is_valid_image(f):
-                errors.append(f"{name}: formato inválido. Use JPEG, PNG, WEBP ou GIF.")
+            # One bad file must not fail the batch, so the shared validator is caught
+            # per file instead of bubbling up.
+            try:
+                detect_image_extension(f)
+            except ValidationError as exc:
+                errors.append(f"{name}: {exc}")
                 continue
 
             self._repository.create_photo(album, f, name)
