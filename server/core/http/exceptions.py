@@ -86,6 +86,8 @@ def _reshape_drf_validation(response: Response) -> Response:
     return response
 
 
+# Order matters: these are matched by inheritance, first hit wins, and NotAuthenticated is
+# itself a subclass of AuthenticationFailed. Most specific first.
 _DRF_ERROR_CODE_MAP: dict[type[Exception], str] = {
     NotAuthenticated: "NOT_AUTHENTICATED",
     AuthenticationFailed: "AUTHENTICATION_FAILED",
@@ -99,15 +101,41 @@ _DRF_DETAIL_OVERRIDES: dict[type[Exception], str] = {
 }
 
 
+def _match_by_type[T](exc: Exception, table: dict[type[Exception], T]) -> T | None:
+    """First entry whose class ``exc`` is an instance of, or None.
+
+    Matching on ``type(exc)`` misses subclasses, and third-party packages raise those:
+    SimpleJWT signals a bad token with ``InvalidToken``, a subclass of
+    ``AuthenticationFailed``, which used to fall through to "UNKNOWN". Same approach
+    ``_status_for_domain`` already takes for the domain exceptions.
+    """
+    for cls, value in table.items():
+        if isinstance(exc, cls):
+            return value
+    return None
+
+
+def _flatten_detail(detail: object) -> str:
+    """Reduce a DRF detail to the string the canonical body promises.
+
+    SimpleJWT wraps its message in ``{"detail": ..., "code": ...}``. Copied through as-is,
+    a client reading ``detail`` as text renders the raw JSON on screen.
+    """
+    if isinstance(detail, dict):
+        inner = detail.get("detail")
+        return str(inner) if inner is not None else str(detail)
+    return str(detail)
+
+
 def _reshape_drf_exception(exc: Exception, response: Response) -> Response:
     if isinstance(exc, DRFValidationError):
         return _reshape_drf_validation(response)
 
-    error_code = _DRF_ERROR_CODE_MAP.get(type(exc), "UNKNOWN")
-    detail = _DRF_DETAIL_OVERRIDES.get(type(exc))
+    error_code = _match_by_type(exc, _DRF_ERROR_CODE_MAP) or "UNKNOWN"
+    detail = _match_by_type(exc, _DRF_DETAIL_OVERRIDES)
 
     if detail is None:
-        detail = str(getattr(exc, "detail", "An error occurred."))
+        detail = _flatten_detail(getattr(exc, "detail", "An error occurred."))
 
     response.data = build_canonical_error(error_code, detail)
     return response

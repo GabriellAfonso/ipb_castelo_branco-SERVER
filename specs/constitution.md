@@ -30,6 +30,15 @@ Rules that no domain can break. These apply globally across the entire system.
   `core.http.parsing.require_object_body` / `require_int`, which raise the domain
   `ValidationError` the handler already maps to 400.
 
+### Error shape
+- Every error response is `{"error_code", "detail"}` with `detail` a **string**, built by
+  `core.http.exceptions.build_canonical_error`. Clients switch on `error_code` and render
+  `detail` as text.
+- Map exceptions to codes by `isinstance`, never by `type(exc)`. Third-party packages raise
+  subclasses — SimpleJWT signals a bad token with `InvalidToken`, a subclass of
+  `AuthenticationFailed` — and an exact-type lookup answers `UNKNOWN` silently. Order the
+  map most-specific first: `NotAuthenticated` is itself a subclass of `AuthenticationFailed`.
+
 ## Architecture
 - Features never import from each other directly — use `core/` or signals
 - `core/` may contain models, but **only entities genuinely shared by two or more features**.
