@@ -38,12 +38,21 @@ def _status_for_domain(exc: DomainError) -> int:
     return status.HTTP_500_INTERNAL_SERVER_ERROR
 
 
-def _build_canonical(
+def build_canonical_error(
     error_code: str,
     detail: str,
     field_errors: dict[str, list[str]] | None = None,
     **extra: object,
 ) -> dict[str, object]:
+    """Return the response body every error in this API is shaped like.
+
+    Public because responses are also built outside the DRF exception handler — the
+    django-axes lockout in ``core.http.lockout`` is produced by middleware, which never
+    reaches this handler, and must not carry a second copy of the shape.
+
+    >>> build_canonical_error("NOT_FOUND", "Song not found: id=7")
+    {'error_code': 'NOT_FOUND', 'detail': 'Song not found: id=7'}
+    """
     body: dict[str, object] = {"error_code": error_code, "detail": detail}
     if field_errors:
         body["field_errors"] = field_errors
@@ -53,7 +62,7 @@ def _build_canonical(
 
 def _handle_domain_exception(exc: DomainError) -> Response:
     http_status = _status_for_domain(exc)
-    body = _build_canonical(exc.error_code, str(exc))
+    body = build_canonical_error(exc.error_code, str(exc))
     body.update(exc.extra_context())
     return Response(body, status=http_status)
 
@@ -65,11 +74,13 @@ def _reshape_drf_validation(response: Response) -> Response:
     if isinstance(data, dict):
         # Field-level errors: {"field": ["msg", ...]}
         field_errors = {k: v if isinstance(v, list) else [v] for k, v in data.items()}
-        body = _build_canonical("VALIDATION_ERROR", "Validation failed.", field_errors=field_errors)
+        body = build_canonical_error(
+            "VALIDATION_ERROR", "Validation failed.", field_errors=field_errors
+        )
     elif isinstance(data, list):
-        body = _build_canonical("VALIDATION_ERROR", " ".join(str(e) for e in data))
+        body = build_canonical_error("VALIDATION_ERROR", " ".join(str(e) for e in data))
     else:
-        body = _build_canonical("VALIDATION_ERROR", str(data))
+        body = build_canonical_error("VALIDATION_ERROR", str(data))
 
     response.data = body
     return response
@@ -98,7 +109,7 @@ def _reshape_drf_exception(exc: Exception, response: Response) -> Response:
     if detail is None:
         detail = str(getattr(exc, "detail", "An error occurred."))
 
-    response.data = _build_canonical(error_code, detail)
+    response.data = build_canonical_error(error_code, detail)
     return response
 
 
@@ -107,7 +118,9 @@ def _handle_pydantic_validation(exc: PydanticValidationError) -> Response:
     for err in exc.errors():
         loc = ".".join(str(part) for part in err["loc"])
         field_errors.setdefault(loc, []).append(err["msg"])
-    body = _build_canonical("VALIDATION_ERROR", "Validation failed.", field_errors=field_errors)
+    body = build_canonical_error(
+        "VALIDATION_ERROR", "Validation failed.", field_errors=field_errors
+    )
     return Response(body, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -151,7 +164,7 @@ def custom_exception_handler(exc: Exception, context: dict[str, object]) -> Resp
 
     # 4. Unhandled exceptions — structured 500, never None
     detail = str(exc) if settings.DEBUG else "An unexpected error occurred."
-    body = _build_canonical("INTERNAL_ERROR", detail)
+    body = build_canonical_error("INTERNAL_ERROR", detail)
     response = Response(body, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     _log_response(exc, response)
     return response
