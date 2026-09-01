@@ -146,14 +146,37 @@ class TestUS2TrafficMonitoring:
         end_record = log_capture.records[1]
         assert end_record.user_id == 42  # type: ignore[attr-defined]
 
-    def test_client_ip_from_x_forwarded_for(
+    def test_client_ip_is_the_right_most_forwarded_entry(
         self, rf: RequestFactory, log_capture: FakeJsonHandler
     ) -> None:
+        """nginx appends the observed address, so the right-most entry is the real one."""
         middleware = RequestLoggingMiddleware(_ok_response)
         request = rf.get("/", HTTP_X_FORWARDED_FOR="203.0.113.50, 70.41.3.18")
         middleware(request)
         start_record = log_capture.records[0]
-        assert start_record.client_ip == "203.0.113.50"  # type: ignore[attr-defined]
+        assert start_record.client_ip == "70.41.3.18"  # type: ignore[attr-defined]
+
+    def test_client_ip_ignores_an_address_the_caller_invented(
+        self, rf: RequestFactory, log_capture: FakeJsonHandler
+    ) -> None:
+        """Regression: taking the left-most entry logged whatever the caller sent, which
+        made every logged IP forgeable — worst exactly when the log matters, such as
+        investigating what the axes lockout blocked."""
+        middleware = RequestLoggingMiddleware(_ok_response)
+        request = rf.get("/", HTTP_X_FORWARDED_FOR="8.8.8.8, 198.51.100.9")
+        middleware(request)
+        start_record = log_capture.records[0]
+        assert start_record.client_ip == "198.51.100.9"  # type: ignore[attr-defined]
+
+    def test_client_ip_with_a_single_forwarded_entry(
+        self, rf: RequestFactory, log_capture: FakeJsonHandler
+    ) -> None:
+        """The production shape: one proxy, so nginx sends exactly one address."""
+        middleware = RequestLoggingMiddleware(_ok_response)
+        request = rf.get("/", HTTP_X_FORWARDED_FOR="198.51.100.9")
+        middleware(request)
+        start_record = log_capture.records[0]
+        assert start_record.client_ip == "198.51.100.9"  # type: ignore[attr-defined]
 
     def test_client_ip_fallback_to_remote_addr(
         self, rf: RequestFactory, log_capture: FakeJsonHandler

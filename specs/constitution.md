@@ -63,6 +63,14 @@ Rules that no domain can break. These apply globally across the entire system.
   `SIMPLE_JWT["SIGNING_KEY"]`. The dict is built once when `base.py` is imported and
   does not follow a later reassignment — the mismatch is silent.
 
+### Client IP
+- Resolve it through `ipware` with `proxy_order="right-most"` — never by reading
+  `X-Forwarded-For` directly. nginx sets the header with `$proxy_add_x_forwarded_for`,
+  which appends the observed address to whatever the caller sent, so the left-most entry
+  is attacker-controlled. Three consumers must agree: DRF throttling (`NUM_PROXIES`), the
+  axes lockout (`AXES_IPWARE_PROXY_ORDER`) and the request log. A log that disagrees with
+  the other two is worst exactly when it matters — investigating what they blocked.
+
 ### Caching
 - Any response whose body depends on who asked declares `Cache-Control: private, no-store`
   and `Vary: Authorization`, via the `private=True` flag on

@@ -12,6 +12,7 @@ import uuid
 from typing import Callable
 
 from django.http import HttpRequest, HttpResponse
+from ipware import get_client_ip
 
 from core.logging.context import set_request_id
 
@@ -19,16 +20,20 @@ logger = logging.getLogger(__name__)
 
 
 def _get_client_ip(request: HttpRequest) -> str:
-    """Extract client IP from X-Forwarded-For (first IP) or REMOTE_ADDR.
+    """Return the address nginx observed, not the one the caller claimed.
 
-    >>> _get_client_ip(type('R', (), {'META': {'REMOTE_ADDR': '127.0.0.1'}})())
-    '127.0.0.1'
+    nginx sets `X-Forwarded-For` with `$proxy_add_x_forwarded_for`, which *appends* the
+    real address to whatever the client sent — so the left-most entry is attacker
+    controlled and taking it made every logged IP forgeable. Right-most is the same
+    resolution the axes lockout uses (AXES_IPWARE_PROXY_ORDER), so the app has one notion
+    of client IP instead of two that disagree exactly when a log is worth reading.
+
+    >>> _get_client_ip(request)
+    '203.0.113.7'
     """
-    forwarded_for: str | None = request.META.get("HTTP_X_FORWARDED_FOR")
-    if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
-    result: str = request.META.get("REMOTE_ADDR", "")
-    return result
+    client_ip: str | None
+    client_ip, _ = get_client_ip(request, proxy_order="right-most")
+    return client_ip or ""
 
 
 def _get_user_id(request: HttpRequest) -> int | None:
