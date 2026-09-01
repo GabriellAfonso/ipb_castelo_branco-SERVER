@@ -116,6 +116,11 @@ state impossible to reach quietly.
   away from anyone who reaches that container.
 - Every per-service env file is git-ignored. `.gitignore` must use `.env.*`, not a bare
   `.env`, which matches only the exact name.
+- **Accepted risk:** the Postgres container also reads `./.env`, so it holds
+  `DJANGO_SECRET_KEY` and `GOOGLE_CLIENT_ID` it never uses. Splitting it out would
+  duplicate `POSTGRES_USER`/`POSTGRES_PASSWORD` across two files that can drift. Unlike
+  Grafana, this container publishes no port and exposes no HTTP surface, so it is blast
+  radius rather than an entry vector. Do not re-raise this.
 
 ### Metrics endpoint
 - `/ipbcb/metrics` is blocked at nginx (`location = /ipbcb/metrics { return 404; }`).
