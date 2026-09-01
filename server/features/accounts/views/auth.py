@@ -9,14 +9,17 @@ from dependency_injector.wiring import inject, Provide
 from features.accounts.serializers.serializers import (
     GoogleLoginSerializer,
     LoginSerializer,
+    RefreshSerializer,
     RegisterSerializer,
     TokenSerializer,
 )
 from config.di import Container
 from core.application.dtos.auth_dtos import LoginDTO
+from core.domain.exceptions import ValidationError
 from core.http.parsing import require_object_body
 from features.accounts.services.google_auth_service import GoogleAuthService
 from features.accounts.services.login_service import LoginService
+from features.accounts.services.refresh_service import RefreshService
 from features.accounts.services.register_service import RegisterService
 
 
@@ -58,6 +61,34 @@ class LoginAPI(APIView):
         # is given, and AxesMiddleware only ever sees the Django one. Flagging the wrapper
         # would leave the lockout recorded but never enforced.
         token_dto = login_service.login(login_dto, request._request)
+        return Response(token_dto.model_dump(), status=status.HTTP_200_OK)
+
+
+class RefreshAPI(APIView):
+    """POST: exchange a refresh token for a new pair.
+
+    Replaces SimpleJWT's ``TokenRefreshView``: that one copies the presented token's
+    claims into the new access token, so a token minted before a claim existed refreshes
+    into another one missing it — 200 with credentials the API itself rejects.
+    """
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+    @extend_schema(request=RefreshSerializer, responses={200: TokenSerializer, 401: None})
+    @inject
+    def post(
+        self,
+        request: Request,
+        refresh_service: RefreshService = Provide[Container.refresh_service],
+    ) -> Response:
+        body = require_object_body(request.data)
+        raw_token = body.get("refresh")
+        if not raw_token:
+            raise ValidationError("Field 'refresh' is required.")
+
+        # InvalidRefreshTokenError bubbles up to custom_exception_handler as a 401.
+        token_dto = refresh_service.refresh(str(raw_token))
         return Response(token_dto.model_dump(), status=status.HTTP_200_OK)
 
 

@@ -1,14 +1,14 @@
 from django.urls import path
-from rest_framework_simplejwt.views import TokenBlacklistView, TokenRefreshView
+from rest_framework_simplejwt.views import TokenBlacklistView
 
-from features.accounts.views.auth import GoogleLoginAPI, LoginAPI, RegisterAPI
+from features.accounts.views.auth import GoogleLoginAPI, LoginAPI, RefreshAPI, RegisterAPI
 from features.accounts.views.profile import MeProfileAPIView, ProfilePhotoAPIView
 
 urlpatterns = [
     path("api/auth/google/", GoogleLoginAPI.as_view(), name="google_login"),
     path("api/auth/register/", RegisterAPI.as_view(), name="register"),
     path("api/auth/login/", LoginAPI.as_view(), name="login"),
-    path("api/auth/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/auth/refresh/", RefreshAPI.as_view(), name="token_refresh"),
     # Blacklists the refresh token it is given. The access token stays valid until it
     # expires — revoking it per request would mean a database read on every call, which
     # is the cost JWT exists to avoid.

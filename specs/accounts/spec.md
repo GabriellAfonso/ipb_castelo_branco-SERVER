@@ -83,9 +83,15 @@ All under `/ipbcb/accounts/`.
 - Returns: `TokenDTO` (200) or 400/401
 
 ### POST `api/auth/refresh/`
-- **Public** (SimpleJWT built-in `TokenRefreshView`)
+- **Public** — the refresh token is the proof. `RefreshAPI` + `RefreshService`, not
+  SimpleJWT's `TokenRefreshView`
 - Input: refresh token
-- Returns: new access token
+- Returns: a new access **and** refresh token (rotation), or 401
+- The pair is rebuilt from the user record, never by copying the presented token's claims
+  — see Business Rule 15 for why
+- The presented token is blacklisted: rotation stays single use
+- An inactive user cannot refresh, otherwise the endpoint mints a token
+  `JWTAuthentication` rejects on the next request
 
 ### POST `api/auth/logout/`
 - **Public** (SimpleJWT built-in `TokenBlacklistView`) — the refresh token is the proof
@@ -165,11 +171,18 @@ All under `/ipbcb/accounts/`.
       to a lost or stolen device
     - `User.is_active = False` blocks the account entirely (`CHECK_USER_IS_ACTIVE`,
       on by default)
-13. Enabling `CHECK_REVOKE_TOKEN` invalidates every token issued before it: those have no
-    `hash_password` claim, so the check fails and the user must log in again once
+13. Enabling `CHECK_REVOKE_TOKEN` invalidates every access token issued before it: those
+    carry no `hash_password` claim, so the check fails. Nobody has to sign in again — the
+    client's next refresh rebuilds the pair from the user record (rule 15) and the claim
+    appears. This only holds because `api/auth/refresh/` rebuilds rather than copies
 14. `BLACKLIST_AFTER_ROTATION` writes a row per refresh. The `ipbcb_token_flush` service
     in `compose.prod.yml` runs `manage.py flushexpiredtokens` daily so the table does not
     grow without bound. Housekeeping, not security — an expired token is refused anyway
+15. Any endpoint issuing tokens builds them from the user, through
+    `features.accounts.auth.jwt.get_tokens_for_user`. Deriving a token from another token
+    freezes whatever claims existed when the first was minted, and the mismatch is silent:
+    a 200 carrying credentials that fail on the very next request. A client that only
+    signs out when the *refresh* fails is then stuck with no route back to the login screen
 
 ---
 

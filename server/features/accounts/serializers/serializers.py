@@ -94,6 +94,10 @@ class GoogleLoginSerializer(serializers.Serializer[Any]):
     id_token = serializers.CharField()
 
 
+class RefreshSerializer(serializers.Serializer[Any]):
+    refresh = serializers.CharField()
+
+
 class TokenSerializer(serializers.Serializer[Any]):
     access = serializers.CharField(read_only=True)
     refresh = serializers.CharField(read_only=True)

@@ -66,6 +66,11 @@ class InvalidCredentialsError(AuthenticationError):
         super().__init__("Invalid username or password")
 
 
+class InvalidRefreshTokenError(AuthenticationError):
+    def __init__(self) -> None:
+        super().__init__("Refresh token is invalid, expired or revoked")
+
+
 class InvalidGoogleTokenError(AuthenticationError):
     def __init__(self) -> None:
         super().__init__("Invalid Google token")

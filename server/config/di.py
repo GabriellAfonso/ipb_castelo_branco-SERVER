@@ -5,6 +5,7 @@ from features.accounts.repositories.user_repository import UserRepositoryImpl
 from features.accounts.services.google_auth_service import GoogleAuthService
 from features.accounts.services.login_service import LoginService
 from features.accounts.services.profile_service import ProfileService
+from features.accounts.services.refresh_service import RefreshService
 from features.accounts.services.register_service import RegisterService
 from core.time.clock import SystemClock
 from features.bible.repositories import BibleRepositoryImpl
@@ -49,6 +50,7 @@ class Container(containers.DeclarativeContainer):
 
     register_service = providers.Factory(RegisterService, user_repository=user_repository)
     login_service = providers.Factory(LoginService)
+    refresh_service = providers.Factory(RefreshService, user_repository=user_repository)
     google_auth_service = providers.Factory(
         GoogleAuthService,
         user_repository=user_repository,
