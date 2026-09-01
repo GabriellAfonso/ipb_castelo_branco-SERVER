@@ -53,7 +53,10 @@ class LoginAPI(APIView):
         # Pydantic ValidationError and InvalidCredentialsError bubble up
         # to custom_exception_handler
         login_dto = LoginDTO(**request.data)
-        token_dto = login_service.login(login_dto)
+        # The underlying HttpRequest, not DRF's wrapper: the axes backend flags the object it
+        # is given, and AxesMiddleware only ever sees the Django one. Flagging the wrapper
+        # would leave the lockout recorded but never enforced.
+        token_dto = login_service.login(login_dto, request._request)
         return Response(token_dto.model_dump(), status=status.HTTP_200_OK)
 
 

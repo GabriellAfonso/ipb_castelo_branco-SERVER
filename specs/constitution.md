@@ -6,6 +6,12 @@ Rules that no domain can break. These apply globally across the entire system.
 - All protected endpoints require JWT (SimpleJWT) or Google OAuth 2.0
 - Permission class `IsAuthenticated` on every authenticated view
 - No endpoint bypasses auth unless explicitly marked public
+- Every path that checks a password is behind failed-attempt lockout (`django-axes`), the API
+  login and the Django admin login alike. DRF throttles do not reach the admin — it is a plain
+  Django view — and the password policy below allows six-character passwords, so the lockout is
+  the only thing standing between a public `/ipbcb/admin/` and an offline-speed guessing loop.
+  The lockout key is the `(username, address)` pair; neither half alone is acceptable, and the
+  reasoning is in `specs/008-login-brute-force-lockout/plan.md` D-3.
 
 ## Data Integrity
 - All user input validated via DRF serializer before reaching the database
@@ -25,7 +31,15 @@ Rules that no domain can break. These apply globally across the entire system.
   becomes a dumping ground. `core` became an installed Django app in feature 007, when the
   church service catalogue was needed by both `schedule` and `songs`.
 - Views never access repositories — only services
-- Services never import HTTP objects (`request`, `HttpResponse`)
+- Services never import HTTP objects (`request`, `HttpResponse`).
+  **One standing exception: `LoginService.login()` receives the `request`.**
+  `django-axes` records the client address and user agent of each failed attempt, and its
+  authentication backend raises `AxesBackendRequestParameterRequired` when
+  `django.contrib.auth.authenticate()` is called without one — so the choice is not "pure service
+  or impure service", it is "lockout or no lockout". Wrapping the library behind a Protocol taking
+  a Pydantic client context does not avoid it either: the library's own handler wants an
+  `HttpRequest` too, so the wrapper would have to fake one. Full reasoning in
+  `specs/008-login-brute-force-lockout/plan.md` D-1. No other service takes an HTTP parameter.
 - Repositories are the only layer that touches the ORM
 - Dependencies injected via `dependency-injector` container (`config/di.py`)
 - DTOs between layers use Pydantic models, not raw dicts

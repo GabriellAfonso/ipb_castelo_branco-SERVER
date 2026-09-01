@@ -55,10 +55,17 @@ All under `/ipbcb/accounts/`.
 - Flow: Serializer validates -> DTO -> UserRepository.create() -> JWT tokens
 
 ### POST `api/auth/login/`
-- **Public**, throttled (scope: `login`)
+- **Public**, throttled (scope: `login`) and under failed-attempt lockout
 - Input: username, password
-- Returns: `TokenDTO` (200) or 401
+- Returns: `TokenDTO` (200), 401, or 429 once the `(username, address)` pair is locked
 - Flow: DTO validates -> `django.contrib.auth.authenticate()` -> JWT tokens
+- The view passes its `request` to `LoginService.login()`. This is the constitution's single
+  named exception to "services never import HTTP objects" — `django-axes` cannot record or block
+  an attempt it cannot attribute to a client. See `specs/008-login-brute-force-lockout/plan.md`.
+- Five failures for the same `(normalised username, client address)` pair lock it for 30 minutes.
+  A successful login resets the count; an attempt made during the lockout restarts the 30 minutes.
+  Because the whole congregation shares one NAT address on the church WiFi, the pair — never the
+  address alone — is what gets locked.
 
 ### POST `api/auth/google/`
 - **Public**, throttled (scope: `login`)
@@ -126,6 +133,11 @@ All under `/ipbcb/accounts/`.
 8. Profile auto-created on user creation (via signal) and on profile access (via get_or_create)
 9. Old profile photos deleted from filesystem when replaced or profile deleted
 10. All auth endpoints share `login` throttle scope
+11. Username/password login is additionally under failed-attempt lockout (`django-axes`),
+    keyed on the `(normalised username, client address)` pair. The normalisation applied to
+    the lockout key is the same `strip().lower()` the DTOs apply — otherwise `admin`, `Admin`
+    and `ADMIN` would each get their own budget of failures. Google login is unaffected: it
+    never reaches `authenticate()`
 
 ---
 
@@ -138,6 +150,7 @@ All under `/ipbcb/accounts/`.
 | Unverified Google email | 400 | "Conta Google sem email verificado." |
 | Google user creation failure | 500 | "Erro ao criar usuario." |
 | Invalid credentials (login) | 401 | "Nome de usuario ou senha invalidos." |
+| Too many failed logins (login, admin) | 429 | "Muitas tentativas de login. Tente novamente em 30 minutos." (`ACCOUNT_LOCKED`, with `cooloff_seconds`) |
 | Username taken (register) | 400 | Validation error on username field |
 | Passwords don't match | 400 | Validation error on password_confirm field |
 | Profile not found (photo delete) | 404 | "Perfil nao encontrado." |

@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "axes",
     # Shared layer. Holds only entities used by two or more features — the church
     # service catalogue is shared by schedule and songs, which may not import each other.
     "core",
@@ -90,6 +91,9 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # After AuthenticationMiddleware: it reads the lockout flag the axes backend sets on the
+    # request. Before PrometheusAfterMiddleware: the 429s it produces must still be counted.
+    "axes.middleware.AxesMiddleware",
     "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 
@@ -177,6 +181,48 @@ REST_FRAMEWORK = {
     # by rotating it.
     "NUM_PROXIES": 1,
 }
+
+
+# Brute-force lockout (django-axes)
+# /ipbcb/admin/ is a plain Django view, so the DRF throttles above never reach it — without
+# this block the superuser password is guessable at the rate four gunicorn workers can answer.
+# Every value here overrides a library default that is wrong for this deployment; the reasoning
+# is in specs/008-login-brute-force-lockout/plan.md.
+AUTHENTICATION_BACKENDS = [
+    # Must be first: it only monitors and blocks, it never authenticates. ModelBackend stays
+    # the single place that checks the password and runs permission checks.
+    "axes.backends.AxesStandaloneBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# The Nth failure is itself refused with the lockout response, so this allows four
+# informative 401s before the fifth attempt is turned away. Library default is 3.
+AXES_FAILURE_LIMIT = 5
+# Library default is None, which means locked out forever until an admin clears the row —
+# a mistyped password would become a support call. It also bounds the counter: axes purges
+# attempts older than this, so the limit above is really "five failures within 30 minutes".
+AXES_COOLOFF_TIME = timedelta(minutes=30)
+# Only reaches the Django admin. The reset hangs off Django's user_logged_in signal, which
+# django.contrib.auth.login() sends and the JWT login does not — LoginAPI hands out tokens
+# without ever creating a session. The API relies on the 30-minute window above instead.
+AXES_RESET_ON_SUCCESS = True
+# Combination, not two independent keys. Locking on ip_address alone (the library default)
+# would lock the whole congregation out through the single church-WiFi NAT address; locking
+# on username alone hands anyone a remote denial of service against the administrator.
+AXES_LOCKOUT_PARAMETERS = [["username", "ip_address"]]
+AXES_USERNAME_CALLABLE = "core.http.lockout.axes_lockout_username"
+AXES_LOCKOUT_CALLABLE = "core.http.lockout.axes_lockout_response"
+# Same reason as NUM_PROXIES above: behind nginx, REMOTE_ADDR (the library default) is the
+# proxy for every client on earth, and a raw X-Forwarded-For lets a client pick its own key.
+# REMOTE_ADDR stays as the fallback for dev and the test suite, which send no XFF header.
+#
+# "right-most" is what makes the header unspoofable: nginx appends the real peer address to
+# whatever the client sent, so the rightmost entry is the only one a client cannot write.
+# AXES_IPWARE_PROXY_COUNT is deliberately left unset — ipware reads it as "the header must
+# hold exactly this many proxy hops" and returns None when it does not, which is the ordinary
+# production case of a single-entry X-Forwarded-For. It is not DRF's NUM_PROXIES.
+AXES_IPWARE_PROXY_ORDER = "right-most"
+AXES_IPWARE_META_PRECEDENCE_ORDER = ("HTTP_X_FORWARDED_FOR", "REMOTE_ADDR")
 
 
 # Internationalization

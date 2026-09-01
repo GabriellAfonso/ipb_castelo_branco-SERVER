@@ -34,3 +34,9 @@ REST_FRAMEWORK = {
         "hymnal_ingest": "99999/min",
     },
 }
+
+# Off by default: the suite logs in with wrong passwords on purpose, and one test's failures
+# must never lock another test out (CLAUDE.md §10, F.I.R.S.T — independent). The tests that
+# exercise the lockout switch it on with @override_settings(AXES_ENABLED=True); the library
+# reads this flag at call time, so the override takes effect.
+AXES_ENABLED = False
