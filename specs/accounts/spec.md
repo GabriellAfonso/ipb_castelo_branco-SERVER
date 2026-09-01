@@ -82,6 +82,14 @@ All under `/ipbcb/accounts/`.
 - Input: refresh token
 - Returns: new access token
 
+### POST `api/auth/logout/`
+- **Public** (SimpleJWT built-in `TokenBlacklistView`) — the refresh token is the proof
+- Input: refresh token
+- Blacklists it, so it can no longer be exchanged for an access token
+- Returns: 200 empty, or 401 when the token is invalid or already blacklisted
+- The access token stays valid until it expires (up to 60 min). Revoking it per request
+  would mean a database read on every call, which is the cost JWT exists to avoid.
+
 ### GET `api/me/profile/`
 - **Authenticated**
 - Returns: name, active, is_admin, is_member, photo_url
@@ -138,6 +146,19 @@ All under `/ipbcb/accounts/`.
     the lockout key is the same `strip().lower()` the DTOs apply — otherwise `admin`, `Admin`
     and `ADMIN` would each get their own budget of failures. Google login is unaffected: it
     never reaches `authenticate()`
+12. Three levers revoke a token, in increasing severity:
+    - `POST api/auth/logout/` blacklists one refresh token (leaving the app on a device)
+    - Changing the user's password revokes **every** token that user holds, on every
+      device, access tokens included and immediately (`CHECK_REVOKE_TOKEN`, which puts a
+      hash of the password in each token and checks it per request). This is the answer
+      to a lost or stolen device
+    - `User.is_active = False` blocks the account entirely (`CHECK_USER_IS_ACTIVE`,
+      on by default)
+13. Enabling `CHECK_REVOKE_TOKEN` invalidates every token issued before it: those have no
+    `hash_password` claim, so the check fails and the user must log in again once
+14. `BLACKLIST_AFTER_ROTATION` writes a row per refresh. The `ipbcb_token_flush` service
+    in `compose.prod.yml` runs `manage.py flushexpiredtokens` daily so the table does not
+    grow without bound. Housekeeping, not security — an expired token is refused anyway
 
 ---
 

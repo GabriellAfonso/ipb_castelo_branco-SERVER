@@ -154,6 +154,11 @@ SIMPLE_JWT = {
     # reassign SIGNING_KEY, or tokens keep being signed with the value read right here.
     "SIGNING_KEY": SECRET_KEY,
     "AUTH_HEADER_TYPES": ("Bearer",),
+    # Embeds a hash of the user's password in every token and checks it on each request,
+    # so changing a password revokes every token that user holds — access tokens included,
+    # on every device, immediately. Without it the only lever is deactivating the account,
+    # and a leaked refresh token stays usable for its full 30 days.
+    "CHECK_REVOKE_TOKEN": True,  # nosec B105 — a flag, not a credential
 }
 
 REST_FRAMEWORK = {
