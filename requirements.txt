@@ -13,6 +13,11 @@ uvicorn[standard]==0.41.0
 # ─── Auth / Integrations ──────────────────────────────────────────────────────
 google-auth>=2.0.0,<3.0.0
 requests==2.32.5
+# Failed-login lockout for the API login and the Django admin. 8.x is the first series
+# declaring Django 6.0 support. See specs/008-login-brute-force-lockout/plan.md.
+# The [ipware] extra is NOT optional here: without it axes silently ignores
+# AXES_IPWARE_* and reads REMOTE_ADDR, which behind nginx is the proxy for every client.
+django-axes[ipware]==8.3.1
 
 # ─── API Docs ─────────────────────────────────────────────────────────────────
 drf-spectacular==0.29.0
