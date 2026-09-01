@@ -109,6 +109,21 @@ state impossible to reach quietly.
 - `SECURE_HSTS_PRELOAD` is deliberately off: browser preload is effectively
   irreversible. The HSTS header itself is set.
 
+### Dependencies
+- CI runs `pip-audit -r requirements.txt --strict` as a **blocking** gate. It is the only
+  check that looks at the dependencies rather than at our own code, and the dependencies
+  are most of what runs in production — Pillow decodes uploaded bytes, Django serves every
+  request. Blocking on purpose: a published advisory does not announce itself, and a red
+  build is the only reminder that does not rely on remembering to look. A badly timed
+  advisory is unblocked with `--ignore-vuln <id>` plus a dated comment saying why, never by
+  dropping the gate.
+- Declare the canonical package, never an alias that only depends on it. `requirements.txt`
+  once pinned `dotenv`, a package whose own summary reads "Deprecated package" and whose
+  sole content is a dependency on `python-dotenv`. It sits on an obvious typosquat name,
+  is maintained by someone else, and runs at `config/settings/base.py` import time —
+  before anything else in the application. The failure mode is silent: `pip install dotenv`
+  to "fix" an ImportError puts it right back.
+
 ### Secrets and service boundaries
 - Each service gets only the secrets it needs. `./.env` is the application's file
   (Django + Postgres); Grafana reads `./.env.grafana`. Never point a public-facing

@@ -29,6 +29,14 @@ jobs:
       - name: Security scan (bandit)
         run: bandit -r server/ -c pyproject.toml
 
+      # The only gate that looks at the dependencies instead of at our own code. Pillow
+      # decodes uploaded images and Django serves every request, so a published advisory
+      # there is live exposure that ruff, bandit and mypy cannot see. Blocking on purpose:
+      # a red build is the only reminder that does not depend on remembering to look.
+      # To unblock a bad-timing advisory: --ignore-vuln GHSA-xxxx, with a dated comment.
+      - name: Dependency audit (pip-audit)
+        run: pip-audit -r requirements.txt --strict
+
       # Catches a production settings module that stopped being production-hardened.
       # Values are placeholders: this asserts the module's shape, not the real secrets.
       - name: Django deploy checks
