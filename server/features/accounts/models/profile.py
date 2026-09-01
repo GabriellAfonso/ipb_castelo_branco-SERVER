@@ -9,8 +9,8 @@ def profile_photo_path(instance: "Profile", filename: str) -> str:
     Falls back to the user id when the username predates the username rules: those rows
     exist, and their usernames may hold path separators or "..".
 
-    >>> profile_photo_path(profile, "profile_picture.png")
-    'profiles/ana.paula/profile_picture.png'
+    >>> profile_photo_path(profile, "6f1c2d....png")
+    'profiles/ana.paula/6f1c2d....png'
     """
     username = instance.user.username
     folder = username if is_valid_username(username) else str(instance.user.pk)

@@ -1,4 +1,5 @@
 from typing import IO
+from uuid import uuid4
 
 from django.core.files import File
 
@@ -14,8 +15,15 @@ class ProfileRepositoryImpl(ProfileRepository):
         return Profile.objects.get_or_create(user=user)
 
     def save_photo(self, profile: Profile, extension: str, upload: IO[bytes]) -> None:
-        """Stream the upload to storage — Django writes it in chunks, never all at once."""
-        profile.photo.save(f"profile_picture.{extension}", File(upload), save=True)
+        """Stream the upload to storage under an unguessable name.
+
+        Django writes it in chunks, never all at once. The random component matters for
+        access control, not for collisions: nginx serves MEDIA_ROOT straight from disk with
+        no permission check, so a deterministic "profile_picture.png" let anyone fetch any
+        member's photo from a guessed URL. Authenticated delivery is the real fix — see
+        TODO/specify_protected_media.md.
+        """
+        profile.photo.save(f"{uuid4().hex}.{extension}", File(upload), save=True)
 
     def delete_photo(self, profile: Profile) -> None:
         if profile.photo:

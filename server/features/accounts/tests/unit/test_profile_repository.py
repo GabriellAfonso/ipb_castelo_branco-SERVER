@@ -43,7 +43,32 @@ def test_save_photo(repo: ProfileRepositoryImpl, user: User) -> None:
     profile.refresh_from_db()
     assert profile.photo is not None
     assert profile.photo.name is not None
-    assert profile.photo.name.startswith("profiles/profuser/profile_picture")
+    assert profile.photo.name.startswith("profiles/profuser/")
+
+
+@pytest.mark.django_db
+def test_save_photo_name_is_not_derivable_from_the_username(
+    repo: ProfileRepositoryImpl, user: User
+) -> None:
+    """Regression: nginx serves MEDIA_ROOT with no permission check, and the old name was
+    always "profile_picture.{ext}" — so any member's photo could be fetched from a URL
+    built out of their username."""
+    repo.save_photo(user.profile, "png", BytesIO(b"fake-image-content"))
+    user.profile.refresh_from_db()
+
+    assert "profile_picture" not in (user.profile.photo.name or "")
+
+
+@pytest.mark.django_db
+def test_two_uploads_never_reuse_the_same_name(repo: ProfileRepositoryImpl, user: User) -> None:
+    repo.save_photo(user.profile, "png", BytesIO(b"first"))
+    user.profile.refresh_from_db()
+    first = user.profile.photo.name
+
+    repo.save_photo(user.profile, "png", BytesIO(b"second"))
+    user.profile.refresh_from_db()
+
+    assert user.profile.photo.name != first
 
 
 @pytest.mark.django_db
