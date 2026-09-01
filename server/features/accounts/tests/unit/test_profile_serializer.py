@@ -38,13 +38,12 @@ def test_read_only_fields_not_writable() -> None:
 
     s = ProfileSerializer(
         profile,
-        data={"is_admin": True, "is_member": True, "active": False, "name": "Allowed"},
+        data={"is_admin": True, "is_member": True, "name": "Allowed"},
         partial=True,
     )
     assert s.is_valid(), s.errors
     assert "is_admin" not in s.validated_data
     assert "is_member" not in s.validated_data
-    assert "active" not in s.validated_data
     assert "name" in s.validated_data
 
 

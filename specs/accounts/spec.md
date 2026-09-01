@@ -25,7 +25,6 @@ Manages user identity, authentication, and profile. Single entry point for who t
   permission check, so a deterministic name let anyone fetch any member's photo from a URL
   built out of their username. Authenticated delivery is the real fix — see
   `TODO/specify_protected_media.md`.
-- `active`: bool, default true
 - `is_member`: bool, default false
 - `is_admin`: bool, default false
 
@@ -98,13 +97,13 @@ All under `/ipbcb/accounts/`.
 
 ### GET `api/me/profile/`
 - **Authenticated**
-- Returns: name, active, is_admin, is_member, photo_url
+- Returns: name, is_admin, is_member, photo_url
 - Supports ETag (`If-None-Match` -> 304)
 - Auto-creates Profile if missing (get_or_create)
 
 ### PATCH `api/me/profile/`
 - **Authenticated**
-- Updatable: `name` only (active, is_admin, is_member, photo_url are read-only)
+- Updatable: `name` only (is_admin, is_member, photo_url are read-only)
 - Returns: updated profile (200)
 
 ### POST `api/me/profile/photo/`
@@ -147,6 +146,12 @@ All under `/ipbcb/accounts/`.
 8. Profile auto-created on user creation (via signal) and on profile access (via get_or_create)
 9. Old profile photos deleted from filesystem when replaced or profile deleted
 10. All auth endpoints share `login` throttle scope
+10a. Deactivation is `User.is_active` only. SimpleJWT checks it on every authenticated
+     request (`CHECK_USER_IS_ACTIVE`), so it covers endpoints guarded by plain
+     `IsAuthenticated` as well — which a permission class could not. `Profile.active`
+     used to exist alongside it and was read by nothing: setting it revoked no access,
+     while looking like it did. Removed in migration
+     `accounts/0002_remove_profile_active.py`
 11. Username/password login is additionally under failed-attempt lockout (`django-axes`),
     keyed on the `(normalised username, client address)` pair. The normalisation applied to
     the lockout key is the same `strip().lower()` the DTOs apply — otherwise `admin`, `Admin`

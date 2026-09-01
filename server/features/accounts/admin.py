@@ -10,5 +10,8 @@ admin.site.register(Profile)
 
 @admin.register(User)
 class MyUserAdmin(BaseUserAdmin):  # type: ignore[type-arg]
-    list_display = ("username", "is_staff")
+    # is_active is the switch that actually revokes access — SimpleJWT checks it on every
+    # authenticated request. It was not in the list, so there was no way to see at a glance
+    # who is blocked.
+    list_display = ("username", "is_active", "is_staff")
     fieldsets = BaseUserAdmin.fieldsets
