@@ -64,6 +64,14 @@ Rules that no domain can break. These apply globally across the entire system.
 - `DEBUG = False` in production — never expose tracebacks
 - No password complexity validators — user chooses any password
 - OpenAPI schema is intentionally public — accepted risk for internal church app
+- **Accepted risk:** `POST /api/auth/register/` is public and answers "Este nome de usuário
+  já está em uso." for a taken name, which confirms an account exists. Kept deliberately:
+  the alternative is a generic failure that leaves a non-technical member unable to tell
+  why registration failed. What made the leak worth having — deriving a member's photo URL
+  from their username — is closed by randomised media filenames, and password guessing is
+  bounded by django-axes (5 attempts, 30 min lockout) plus the 10/min register throttle.
+  Do not re-raise. Revisit only if registration becomes invite-only, which would remove the
+  oracle as a side effect of a change worth making on its own terms.
 - `base.py` reads `DJANGO_SECRET_KEY` with **no fallback**. Each environment module
   supplies its own key. A default committed to the repository becomes the JWT signing
   key the moment production loads the wrong settings module, which turns a
