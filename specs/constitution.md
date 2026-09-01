@@ -57,6 +57,14 @@ Rules that no domain can break. These apply globally across the entire system.
   `SIMPLE_JWT["SIGNING_KEY"]`. The dict is built once when `base.py` is imported and
   does not follow a later reassignment — the mismatch is silent.
 
+### Caching
+- Any response whose body depends on who asked declares `Cache-Control: private, no-store`
+  and `Vary: Authorization`, via the `private=True` flag on
+  `core.http.utils._not_modified_or_response`. A shared cache keys on the URL, not on the
+  Authorization header, so an undeclared `/api/me/profile/` response would be handed to the
+  next caller of that URL. Public data stays undeclared, so a cache in front is free to
+  store it.
+
 ## Code Standards
 - All code in English (variables, functions, classes, files, comments, commits)
 - PEP 8 with 100 character line limit

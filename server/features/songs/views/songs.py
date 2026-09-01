@@ -124,7 +124,7 @@ class AllSongsAPI(APIView):
     ) -> Response:
         qs = song_service.list_all_songs()
         data = SongSerializer(qs, many=True).data
-        return _not_modified_or_response(request, data, tag="all-songs")
+        return _not_modified_or_response(request, data)
 
 
 class ChordChartListAPI(APIView):

@@ -68,7 +68,7 @@ class MeProfileAPIView(APIView):
         profile = profile_service.get_profile(user)
         serializer = ProfileSerializer(profile, context={"request": request})
         data = serializer.data
-        return _not_modified_or_response(request, data, tag="PROFILE")
+        return _not_modified_or_response(request, data, private=True)
 
     @inject
     def patch(

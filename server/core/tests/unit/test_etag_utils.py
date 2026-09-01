@@ -93,11 +93,29 @@ def test_strips_whitespace_from_if_none_match() -> None:
     assert response.status_code == 304
 
 
-def test_tag_param_does_not_affect_response() -> None:
+def test_public_response_declares_no_cache_control() -> None:
+    """Public data is left undeclared so a cache in front is free to store it."""
+    response = _not_modified_or_response(_make_drf_request(), {"a": 1})
+
+    assert "Cache-Control" not in response
+    assert "Vary" not in response
+
+
+def test_private_response_is_not_shareable() -> None:
+    """Regression: a shared cache keys on the URL, not on Authorization — without this,
+    one member's /api/me/profile/ would be served to the next member asking for it."""
+    response = _not_modified_or_response(_make_drf_request(), {"a": 1}, private=True)
+
+    assert response["Cache-Control"] == "private, no-store"
+    assert response["Vary"] == "Authorization"
+
+
+def test_private_304_is_also_not_shareable() -> None:
     data = {"a": 1}
-    request_no_tag = _make_drf_request()
-    request_with_tag = _make_drf_request()
-    resp_no_tag = _not_modified_or_response(request_no_tag, data, tag="")
-    resp_with_tag = _not_modified_or_response(request_with_tag, data, tag="X")
-    assert resp_no_tag.status_code == resp_with_tag.status_code
-    assert resp_no_tag["ETag"] == resp_with_tag["ETag"]
+    etag = _make_etag_from_data(data)
+    request = _make_drf_request(if_none_match=etag)
+
+    response = _not_modified_or_response(request, data, private=True)
+
+    assert response.status_code == 304
+    assert response["Cache-Control"] == "private, no-store"

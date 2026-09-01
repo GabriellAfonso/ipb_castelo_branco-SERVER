@@ -23,7 +23,7 @@ class CurrentMonthlyScheduleAPI(APIView):
         schedule_service: ScheduleService = Provide[Container.schedule_service],
     ) -> Response:
         result = schedule_service.get_current_month_schedule(date.today())
-        return _not_modified_or_response(request, result, status_code=200)
+        return _not_modified_or_response(request, result, status_code=200, private=True)
 
 
 class MonthlySchedulePreviewAPI(APIView):
