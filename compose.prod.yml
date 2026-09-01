@@ -51,6 +51,34 @@ services:
     networks:
       - proxy-network
 
+  # Every refresh writes a blacklist row (BLACKLIST_AFTER_ROTATION), so the table grows
+  # without bound. This drops the rows whose tokens have already expired — housekeeping,
+  # not security: an expired token is refused on its own expiry.
+  ipbcb_token_flush:
+    container_name: ipbcb-token-flush-prod
+    image: ipbcb-server:prod
+    command:
+    - sh
+    - -c
+    - |
+      while true; do
+        python manage.py flushexpiredtokens
+        sleep 86400
+      done
+    env_file:
+      - ./.env
+    environment:
+      DJANGO_ENV: prod
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    depends_on:
+      ipbcb_db:
+        condition: service_healthy
+      ipbcb_server:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - proxy-network
+
   prometheus:
     container_name: ipbcb-prometheus-prod
     image: prom/prometheus:v3.4.2
