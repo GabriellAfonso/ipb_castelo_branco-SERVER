@@ -19,6 +19,7 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from config.di import Container
+from core.http.parsing import require_object_body
 from core.http.permissions import IsAdminUser
 from features.songs.hymnal_history_dtos import (
     REASON_INVALID_EVENT,
@@ -296,7 +297,7 @@ class ServiceWindowDetailAPI(APIView):
 
         # Validate the merged result, so a PATCH touching only start_time is still
         # checked against the stored end_time instead of hitting the DB constraint.
-        merged = {**current.model_dump(), **request.data}
+        merged = {**current.model_dump(), **require_object_body(request.data)}
         merged.pop("id", None)
         serializer = ServiceWindowSerializer(data=merged)
         serializer.is_valid(raise_exception=True)

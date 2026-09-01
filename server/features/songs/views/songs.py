@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from config.di import Container
 from core.domain.exceptions import ValidationError
+from core.http.parsing import require_int
 from core.http.permissions import IsAdminUser
 from core.http.utils import _not_modified_or_response
 from features.songs.serializers.serializers import (
@@ -155,7 +156,9 @@ class ChordChartListAPI(APIView):
         content = request.data.get("content", "")
         tone = request.data.get("tone", "")
         instrument = request.data.get("instrument", "")
-        chart = song_service.create_chord_chart(int(song_id), content, tone, instrument)
+        chart = song_service.create_chord_chart(
+            require_int(song_id, "song_id"), content, tone, instrument
+        )
         return Response(ChordChartSerializer(chart).data, status=201)
 
 
@@ -185,7 +188,7 @@ class LyricsListAPI(APIView):
         if song_id is None:
             raise ValidationError("Field 'song_id' is required.")
         content = request.data.get("content", "")
-        lyrics = song_service.create_lyrics(int(song_id), content)
+        lyrics = song_service.create_lyrics(require_int(song_id, "song_id"), content)
         return Response(LyricsSerializer(lyrics).data, status=201)
 
 

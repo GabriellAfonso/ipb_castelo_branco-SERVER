@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from config.di import Container
 from core.domain.exceptions import ValidationError
+from core.http.parsing import require_int, require_object_body
 from core.http.permissions import IsAdminUser, IsMemberUser
 from core.http.utils import _not_modified_or_response
 from features.schedule.services.schedule_service import ScheduleService
@@ -49,9 +50,10 @@ class MonthlySchedulePreviewAPI(APIView):
         request: Request,
         schedule_service: ScheduleService = Provide[Container.schedule_service],
     ) -> Response:
-        year = request.data.get("year")
-        month = request.data.get("month")
-        fixed_list = request.data.get("fixed", []) or []
+        body = require_object_body(request.data)
+        year = body.get("year")
+        month = body.get("month")
+        fixed_list = body.get("fixed", []) or []
 
         fixed_map: dict[tuple[int, date], int] = {}
         for f in fixed_list:
@@ -64,8 +66,8 @@ class MonthlySchedulePreviewAPI(APIView):
             fixed_map[(schedule_type_id, d)] = member_id
 
         preview = schedule_service.generate_preview(
-            year=int(year) if year is not None else None,
-            month=int(month) if month is not None else None,
+            year=require_int(year, "year") if year is not None else None,
+            month=require_int(month, "month") if month is not None else None,
             fixed=fixed_map,
         )
         return Response(preview, status=200)
@@ -105,8 +107,9 @@ def _parse_schedule_save_payload(
 
     Raises ``ValidationError`` on invalid input.
     """
-    raw_year = data.get("year")
-    raw_month = data.get("month")
+    body = require_object_body(data)
+    raw_year = body.get("year")
+    raw_month = body.get("month")
 
     if raw_year is None or raw_month is None:
         raise ValidationError("Fields 'year' and 'month' are required.")
@@ -117,7 +120,7 @@ def _parse_schedule_save_payload(
     except (TypeError, ValueError):
         raise ValidationError("Fields 'year' and 'month' must be integers.")
 
-    items = data.get("items", []) or []
+    items = body.get("items", []) or []
 
     normalized: list[dict[str, Any]] = []
     for it in items:

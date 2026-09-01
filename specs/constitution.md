@@ -23,6 +23,12 @@ Rules that no domain can break. These apply globally across the entire system.
   into memory
 - No `.raw()` or string-formatted SQL with user input — ORM only
 - No queries inside loops — use `select_related` / `prefetch_related`
+- Never `**request.data` or `int(...)` a raw request field directly. A body that is not a
+  JSON object, or a field that will not coerce, raises outside the exception handler's
+  reach and surfaces as a 500 — which tells the client to retry a request that can never
+  succeed, and buries real incidents in client-caused noise. Go through
+  `core.http.parsing.require_object_body` / `require_int`, which raise the domain
+  `ValidationError` the handler already maps to 400.
 
 ## Architecture
 - Features never import from each other directly — use `core/` or signals

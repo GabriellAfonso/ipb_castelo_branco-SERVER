@@ -54,7 +54,9 @@ def upload_photos(
 
         try:
             result = gallery_service.upload_photos(int(album_id), files)
-        except NotFoundError:
+        except (NotFoundError, ValueError, TypeError):
+            # A non-numeric album id can only come from a hand-made POST, not from the
+            # select box — same answer as an album that does not exist.
             return HttpResponse(_build_upload_html(request, albums, ["Álbum não encontrado."]))
 
         if result.has_errors:

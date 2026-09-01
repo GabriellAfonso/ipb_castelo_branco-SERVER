@@ -14,6 +14,7 @@ from features.accounts.serializers.serializers import (
 )
 from config.di import Container
 from core.application.dtos.auth_dtos import LoginDTO
+from core.http.parsing import require_object_body
 from features.accounts.services.google_auth_service import GoogleAuthService
 from features.accounts.services.login_service import LoginService
 from features.accounts.services.register_service import RegisterService
@@ -52,7 +53,7 @@ class LoginAPI(APIView):
     ) -> Response:
         # Pydantic ValidationError and InvalidCredentialsError bubble up
         # to custom_exception_handler
-        login_dto = LoginDTO(**request.data)
+        login_dto = LoginDTO(**require_object_body(request.data))
         # The underlying HttpRequest, not DRF's wrapper: the axes backend flags the object it
         # is given, and AxesMiddleware only ever sees the Django one. Flagging the wrapper
         # would leave the lockout recorded but never enforced.
